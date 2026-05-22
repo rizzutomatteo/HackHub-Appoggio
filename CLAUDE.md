@@ -27,6 +27,49 @@ Tutti i file il cui nome termina con **`REALIZZATI`** (es. `CASI_USO_REALIZZATI.
   - Esempio: per proporre modifiche a `CASI_USO_REALIZZATI.md` → creare `CASI_USO_CHANGE.md`.
   - Il file `*CHANGE` contiene le proposte di modifica; sarà l'utente a decidere se integrarle nel `*REALIZZATI`.
 
+## Convenzioni diagrammi delle classi (PlantUML)
+
+La **fonte di verità** di ogni diagramma delle classi è un file di testo **PlantUML** (`.puml`), non un'immagine né un file binario di Visual Paradigm. Il testo è leggibile/diffabile e versionabile; l'immagine renderizzata e il modello in Visual Paradigm sono derivati per la verifica visiva e per il deliverable ufficiale.
+
+Workflow:
+
+1. Il diagramma viene scritto/aggiornato come `.puml` (segue le regole `*REALIZZATI` / `*CHANGE`: es. `CLASS_DIAGRAM_REALIZZATI.puml` non si tocca, le modifiche vanno in `CLASS_DIAGRAM_CHANGE.puml`).
+2. Si renderizza in PNG/SVG per la verifica visiva (estensione PlantUML di VS Code, `plantuml.jar` da CLI con Graphviz, o server PlantUML online).
+3. L'utente ricrea/raffina il diagramma in **Visual Paradigm** per il deliverable.
+
+**Scheletro file** (un file per diagramma, con legenda in testa):
+
+```
+@startuml NomeDiagramma
+hide empty members
+
+class Hackathon {
+  -nome: String
+  -stato: Stato
+  +proclamaVincitore(t: Team): void
+}
+@enduml
+```
+
+**Visibilità** (sempre esplicita): `+` public, `-` private, `#` protected, `~` package.
+**Membri**: attributi `-nome: Tipo`; operazioni `+metodo(param: Tipo): Ritorno`.
+
+**Mappa univoca delle relazioni** (sintassi PlantUML fissata per evitare ambiguità):
+
+- Generalizzazione (eredità): `Super <|-- Sub` — freccia vuota verso il padre.
+- Realizzazione (interfaccia): `Interface <|.. Classe` — tratteggiata.
+- Associazione: `A "1" -- "*" B : ruolo` — sempre con molteplicità.
+- Associazione navigabile: `A --> "*" B` — la punta indica chi conosce chi.
+- Aggregazione: `Intero o-- "*" Parte` — rombo **vuoto** sul lato **Intero**.
+- Composizione: `Intero *-- "1..*" Parte` — rombo **pieno** sul lato **Intero**.
+- Dipendenza: `A ..> B` — tratteggiata, transitoria.
+
+Regole anti-errore:
+
+- Il rombo (`o` aggregazione / `*` composizione) sta **sempre** sul lato del contenitore/Intero.
+- Ogni associazione/aggregazione/composizione porta **sempre** la molteplicità su entrambe le estremità.
+- I termini e le notazioni vanno allineati a `docs/UML_03_Class.pdf` e `docs/UML_04_Relazioni.pdf` (vedi sezione successiva).
+
 ## Documentazione di riferimento
 
 Per qualsiasi scelta progettuale (notazione UML, processo, requirements engineering, qualità, architettura, design pattern, ecc.) fare riferimento **esclusivamente** a:
