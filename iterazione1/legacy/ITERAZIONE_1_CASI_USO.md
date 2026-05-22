@@ -4,7 +4,7 @@
 
 Questo documento spiega **quali casi d'uso** del progetto HackHub vengono sviluppati nella **prima iterazione** e **perché**. La selezione non è arbitraria: segue la metodologia del Processo Unificato (UP) adottata nel corso e i criteri di prioritizzazione dei casi d'uso.
 
-Riferimenti: requisiti in `progetto.MD`; modello dei casi d'uso in `diagrammi/useCase4.jpg`.
+Riferimenti: requisiti in `progetto.MD`; modello dei casi d'uso in `iterazione1/useCase/useCase.jpg`.
 
 ---
 
@@ -32,28 +32,31 @@ Si scelgono i casi d'uso che massimizzano (Larman, _Applicare UML e i pattern_, 
 
 ---
 
-## 3. I 4 casi d'uso scelti
+## 3. I 5 casi d'uso scelti
 
 | #   | Caso d'uso           | Attore primario | Criterio dominante                     |
 | --- | -------------------- | --------------- | -------------------------------------- |
 | 1   | Crea Hackathon       | Organizzatore   | copertura architetturale + fondante    |
 | 2   | Crea Team            | Utente          | valore + invariante di dominio         |
-| 3   | Invia Sottomissione  | Membro del team | valore + regola di business (scadenza) |
-| 4   | Valuta Sottomissione | Giudice         | valore + chiusura del ciclo            |
+| 3   | Iscrive Team         | Membro del team | collegamento Team↔Hackathon            |
+| 4   | Invia Sottomissione  | Membro del team | valore + regola di business (scadenza) |
+| 5   | Valuta Sottomissione | Giudice         | valore + chiusura del ciclo            |
 
 **1. Crea Hackathon (Organizzatore).** È il caso d'uso fondante: crea l'entità centrale del dominio (l'hackathon, con nome, regolamento, scadenza iscrizioni, date, luogo, premio, dimensione massima del team, giudice e mentori) e dà inizio alla sua macchina a stati (`in iscrizione → in corso → in valutazione → concluso`). Senza un hackathon nessun altro caso d'uso ha senso. Ha la **massima copertura architetturale**: costringe a realizzare l'entità più ricca del dominio, la sua persistenza, il servizio applicativo e l'interfaccia.
 
 **2. Crea Team (Utente).** È l'unità di partecipazione alla piattaforma. Esercita la relazione Utente↔Team e soprattutto l'**invariante di dominio** "un utente può appartenere a un solo team". È prerequisito di qualunque sottomissione.
 
-**3. Invia Sottomissione (Membro del team).** È il caso d'uso che **produce il valore** della piattaforma: il team consegna il proprio lavoro. Esercita una **regola di business critica**: la sottomissione si invia _entro la scadenza_ e resta aggiornabile _fino ad essa_. Presuppone il passo collegato **Iscrive Team** (iscrizione del team all'hackathon), che lega Team↔Hackathon ed è incluso nella stessa fetta.
+**3. Iscrive Team (Membro del team).** È il passo che lega **Team↔Hackathon**: senza l'iscrizione il team non può sottomettere. Esercita il vincolo dello stato "in iscrizione" dell'hackathon (le iscrizioni si chiudono al raggiungimento della scadenza) ed è la pre-condizione di _Invia Sottomissione_.
 
-**4. Valuta Sottomissione (Giudice).** Chiude il ciclo del valore: il Giudice valuta ogni sottomissione con un **giudizio scritto e un punteggio compreso tra 0 e 10**. Esercita il vincolo sul punteggio e lo stato "in valutazione" dell'hackathon.
+**4. Invia Sottomissione (Membro del team).** È il caso d'uso che **produce il valore** della piattaforma: il team consegna il proprio lavoro. Esercita una **regola di business critica**: la sottomissione si invia _entro la scadenza_ e resta aggiornabile _fino ad essa_.
+
+**5. Valuta Sottomissione (Giudice).** Chiude il ciclo del valore: il Giudice valuta ogni sottomissione con un **giudizio scritto e un punteggio compreso tra 0 e 10**. Esercita il vincolo sul punteggio e lo stato "in valutazione" dell'hackathon.
 
 ---
 
 ## 4. La "fetta verticale" (walking skeleton)
 
-I 4 casi d'uso non sono scelti isolatamente: insieme formano **un percorso eseguibile end-to-end**, lo scheletro funzionante della piattaforma.
+I 5 casi d'uso non sono scelti isolatamente: insieme formano **un percorso eseguibile end-to-end**, lo scheletro funzionante della piattaforma.
 
 ```
 Organizzatore         Utente / Membro del team                 Giudice
@@ -77,7 +80,7 @@ E coinvolge **tutti gli attori primari** del sistema (Organizzatore, Utente/Memb
 
 ## 5. Caso d'uso di supporto: Registrazione / Autenticazione
 
-`Registrazione` e `Autenticazione` (attore **Visitatore**) **non** sono contati tra i 4 principali, ma vanno realizzati insieme ad essi perché sono **prerequisito trasversale** di ogni azione autenticata. Esercitano lo **strato di sicurezza**, che in un'architettura a strati è uno dei livelli di base (`05_ProgettazioneArchitetturale.pdf`: la security come strutturazione a strati). Possono essere modellati come pre-condizione o `<<include>>` dei casi d'uso principali.
+`Registrazione` e `Autenticazione` (attore **Visitatore**) **non** sono contati tra i 5 principali, ma vanno realizzati insieme ad essi perché sono **prerequisito trasversale** di ogni azione autenticata. Esercitano lo **strato di sicurezza**, che in un'architettura a strati è uno dei livelli di base (`05_ProgettazioneArchitetturale.pdf`: la security come strutturazione a strati). Possono essere modellati come pre-condizione o `<<include>>` dei casi d'uso principali.
 
 ---
 
@@ -108,7 +111,7 @@ La fetta scelta non è solo "tante schermate": mette alla prova le regole più d
 
 ## 8. Prossimo passo
 
-Per ciascuno dei 4 casi d'uso scelti, scriverne la **specifica nel formato dettagliato** (`UML_02_CasiUso.pdf` slide 11):
+Per ciascuno dei 5 casi d'uso scelti, scriverne la **specifica nel formato dettagliato** (`UML_02_CasiUso.pdf` slide 11):
 
 - Nome, ID, Breve descrizione
 - Attori (primari e secondari)
@@ -124,7 +127,7 @@ Questo è il livello di dettaglio che la fase di Elaborazione UP richiede per il
 **Riferimenti ai documenti del corso:**
 
 - `progetto.MD` — requisiti e attori di HackHub
-- `diagrammi/useCase4.jpg` — modello dei casi d'uso
+- `iterazione1/useCase/useCase.jpg` — modello dei casi d'uso
 - `docs/02_Processo.pdf` — UP, fasi Inception/Elaboration, iterazioni
 - `docs/UML_02_CasiUso.pdf` — formato dei casi d'uso (slide 11), impegno per iterazione (tabella 7.1)
 - `docs/05_ProgettazioneArchitetturale.pdf` — architettura a strati, requisiti qualitativi

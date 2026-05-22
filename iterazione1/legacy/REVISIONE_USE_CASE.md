@@ -1,6 +1,6 @@
 # Revisione Use Case Diagram — Tracking Problemi
 
-Riferimento: `diagrammi/useCase4.jpg` confrontato con `progetto.MD` e `docs/UML_02_CasiUso.pdf`. (Storico versioni: useCase1 → useCase4.)
+Riferimento: `iterazione1/useCase/useCase.jpg` (versione finale, ex `useCase4`) confrontato con `progetto.MD` e `docs/UML_02_CasiUso.pdf`. (Storico versioni: useCase1 → useCase4.)
 
 **Stati possibili** (modifica il marker per aggiornare):
 
@@ -272,7 +272,7 @@ Dopo una discussione sulla correttezza delle generalizzazioni tra attori, in `us
 
 ## Decisioni e questioni aperte
 
-- ✅ **Tutti i punti chiusi; diagramma aggiornato a useCase4.jpg (2026-05-22).**
+- ✅ **Tutti i punti chiusi; diagramma aggiornato a useCase.jpg (2026-05-22).**
 - Polish facoltativo residuo (non bloccante): uniformare `Gestisci Segnalazioni`/`Rimuovi Staff` alla terza persona; maiuscola coerente `Staff`/`staff`.
 - ⚠️ Promemoria da §1.2: valuta di dichiarare l'attore `Amministratore Team` nei requisiti / in una nota sul diagramma, dato che `progetto.MD` non lo menziona esplicitamente.
 
@@ -283,5 +283,5 @@ Dopo una discussione sulla correttezza delle generalizzazioni tra attori, in `us
 - Totale problemi: **22**
 - Risolti: **20**
 - OK così: **2** (4.4, 7.2)
-- Aperti: **0** — ✅ tutti chiusi su useCase4.jpg (2026-05-22)
+- Aperti: **0** — ✅ tutti chiusi su useCase.jpg (2026-05-22)
 - Aggiornamenti successivi (raffinamenti, non nuovi problemi): vedi **§9** (attori/autenticazione; rimozione `Modifica Sottomissioni`).

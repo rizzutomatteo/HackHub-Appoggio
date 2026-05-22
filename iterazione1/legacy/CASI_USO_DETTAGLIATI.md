@@ -316,7 +316,7 @@ In questa iterazione **non esistono casi d'uso dedicati alle transizioni di stat
 
 **Suggerimento VP.** Modella il ramo `6a` (crea-o-aggiorna) con un operatore **if** nel Flow of Events; valuta di generare un **Sequence Diagram** da questo flusso, è il caso d'uso con più logica.
 
-> **Nota sul diagramma.** In `useCase4` l'aggiornamento della sottomissione è coperto da questo caso d'uso (estensione 6a) e il caso d'uso separato `Modifica Sottomissioni` **è stato rimosso** dal diagramma.
+> **Nota sul diagramma.** In `useCase.jpg` l'aggiornamento della sottomissione è coperto da questo caso d'uso (estensione 6a) e il caso d'uso separato `Modifica Sottomissioni` **è stato rimosso** dal diagramma.
 
 ---
 
@@ -421,7 +421,7 @@ Ogni caso d'uso autenticato (UC01-UC05) presuppone che l'attore abbia effettuato
 
 Esercitano lo **strato di sicurezza** dell'architettura (cfr. `ITERAZIONE_1_CASI_USO.md` §5 e `docs/05_ProgettazioneArchitetturale.pdf`).
 
-> **Attori e autenticazione.** In `useCase4` Visitatore, Utente e Membro del team sono **attori distinti, senza generalizzazione** tra loro. `Registrazione` e `Autenticazione` restano sul Visitatore (ingresso nel sistema); il requisito "essere autenticati" per UC01-UC05 è espresso come **pre-condizione** (o «include» `Autenticazione`), non tramite generalizzazione tra attori — cfr. `UML_02_CasiUso.pdf` slide 22. Le uniche generalizzazioni nel diagramma sono Organizzatore/Giudice/Mentore ▷ Membro staff e Amministratore Team ▷ Membro del team.
+> **Attori e autenticazione.** In `useCase.jpg` Visitatore, Utente e Membro del team sono **attori distinti, senza generalizzazione** tra loro. `Registrazione` e `Autenticazione` restano sul Visitatore (ingresso nel sistema); il requisito "essere autenticati" per UC01-UC05 è espresso come **pre-condizione** (o «include» `Autenticazione`), non tramite generalizzazione tra attori — cfr. `UML_02_CasiUso.pdf` slide 22. Le uniche generalizzazioni nel diagramma sono Organizzatore/Giudice/Mentore ▷ Membro staff e Amministratore Team ▷ Membro del team.
 
 ### 4.2 Contesto implementativo (vincoli di `progetto.MD`)
 
@@ -441,5 +441,5 @@ Gli attributi delle entità citate nei flussi andranno definiti nel **diagramma 
 
 - `progetto.MD` — regole di dominio e attori (fonte delle regole di business).
 - `ITERAZIONE_1_CASI_USO.md` — scelta dei casi d'uso e fetta verticale.
-- `REVISIONE_USE_CASE.md` — nomi finali di casi d'uso e attori (coerenti con `diagrammi/useCase4.jpg`).
+- `REVISIONE_USE_CASE.md` — nomi finali di casi d'uso e attori (coerenti con `iterazione1/useCase/useCase.jpg`).
 - `docs/UML_02_CasiUso.pdf` — formato dei casi d'uso (slide 11-15) ed esempio dettagliato (slide 26-30).
