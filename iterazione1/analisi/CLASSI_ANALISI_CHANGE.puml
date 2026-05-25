@@ -13,7 +13,7 @@ enum Stato {
   Concluso
 }
 
-class Utente <<entity>> {
+class Utente <<entità>> {
   nome
   email
   --
@@ -21,7 +21,7 @@ class Utente <<entity>> {
   accettaInvito()
 }
 
-class Hackathon <<entity>> {
+class Hackathon <<entità>> {
   nome
   regolamento
   scadenzaIscrizioni
@@ -37,7 +37,7 @@ class Hackathon <<entity>> {
   elencaSottomissioni()
 }
 
-class Team <<entity>> {
+class Team <<entità>> {
   nome
   --
   aggiungiMembro()
@@ -45,13 +45,13 @@ class Team <<entity>> {
   inviaSottomissione()
 }
 
-class Iscrizione <<entity>> {
+class Iscrizione <<entità>> {
   --
   registra()
   verificaIscrivibilita()
 }
 
-class Sottomissione <<entity>> {
+class Sottomissione <<entità>> {
   titolo
   contenuto
   dataOra
@@ -60,7 +60,7 @@ class Sottomissione <<entity>> {
   registraDataOra()
 }
 
-class Valutazione <<entity>> {
+class Valutazione <<entità>> {
   giudizio
   punteggio
   --
@@ -68,24 +68,27 @@ class Valutazione <<entity>> {
   registra()
 }
 
-' ===== Ruoli staff e partecipazione (molteplicita' su ENTRAMBE le estremita') =====
-Utente "1"     -- "*"    Hackathon : organizzatore
-Utente "1"     -- "*"    Hackathon : giudice
-Utente "1..*"  -- "*"    Hackathon : mentore
-Team   "0..1"  -- "1..*" Utente    : membro
-Team   "0..1"  -- "1"    Utente    : amministratore
+' ===== Ruoli staff e partecipazione (ruoli sull'estremita' Utente, molteplicita' su ENTRAMBE) =====
+Utente "1\norganizzatore"    -- "*" Hackathon
+Utente "1\ngiudice"          -- "*" Hackathon
+Utente "1..*\nmentore"       -- "*" Hackathon
+Team "0..1" -- "1..*\nmembro"        Utente
+Team "0..1" -- "1\namministratore"   Utente
 
 ' ===== Iscrizione (reifica Team-Hackathon) e catena del valore =====
-Team       "1" -- "*"    Iscrizione
-Hackathon  "1" -- "*"    Iscrizione
+Team       "1" -- "*" Iscrizione : effettua >
+Hackathon  "1" -- "*" Iscrizione : raccoglie >
 Iscrizione "1" *-- "0..1" Sottomissione
 Sottomissione "1" *-- "0..1" Valutazione
-Valutazione "*" -- "1"   Utente : giudice
+Valutazione "*" -- "1\ngiudice" Utente
 
-Hackathon ..> Stato
+note bottom of Valutazione
+  Vincolo: il giudice di una Valutazione coincide con il
+  giudice assegnato all'Hackathon della relativa Iscrizione.
+endnote
 
 legend right
-  Classi di analisi (dominio di business), stereotipo «entity».
+  Classi di analisi (dominio di business), stereotipo «entità».
   Lo "stato" e' un attributo/enum; ciclo di vita (pattern State),
   persistenza e controller sono scelte di PROGETTAZIONE (fuori da questo diagramma).
 endlegend
