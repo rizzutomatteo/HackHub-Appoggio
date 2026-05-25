@@ -1,8 +1,8 @@
 @startuml CLASSI_ANALISI_HackHub
-' Diagramma delle CLASSI DI ANALISI - 1a iterazione HackHub.
-' Solo concetti del dominio di business (no boundary/control): cfr. docs/UML_03_Class.pdf slide 11.
-' Coerente con useCase.puml e CASI_USO_REALIZZATI.md
-' (Crea Hackathon, Crea Team, Iscrive Team, Invia Sottomissione, Valuta Sottomissione).
+' CLASSI DI ANALISI - 1a iterazione HackHub. Solo dominio di business (UML_03 slide 11).
+' Stile domain model: niente operazioni (UML_03 slide 13). Ruoli staff reificati in Incarico
+' (UML_02 slide 6). Iscrizione, Incarico e Appartenenza = classi-associazione (UML_04 slide 10).
+' Coerente con useCase.puml e CASI_USO_REALIZZATI.md (5 UC della 1a iterazione).
 hide empty members
 hide circle
 
@@ -13,15 +13,18 @@ enum Stato {
   Concluso
 }
 
-class Utente <<entity>> {
-  nome
-  email
-  --
-  creaTeam()
-  accettaInvito()
+enum RuoloStaff {
+  Organizzatore
+  Giudice
+  Mentore
 }
 
-class Hackathon <<entity>> {
+class Utente <<entità>> {
+  nome
+  email
+}
+
+class Hackathon <<entità>> {
   nome
   regolamento
   scadenzaIscrizioni
@@ -31,63 +34,73 @@ class Hackathon <<entity>> {
   montepremi
   dimensioneMaxTeam
   stato : Stato
-  --
-  avanzaStato()
-  verificaComposizioneStaff()
-  elencaSottomissioni()
 }
 
-class Team <<entity>> {
+class Team <<entità>> {
   nome
-  --
-  aggiungiMembro()
-  iscriviA()
-  inviaSottomissione()
 }
 
-class Iscrizione <<entity>> {
-  --
-  registra()
-  verificaIscrivibilita()
+class Iscrizione <<entità>> {
+  dataIscrizione
 }
 
-class Sottomissione <<entity>> {
+class Incarico <<entità>> {
+  ruolo : RuoloStaff
+}
+
+class Appartenenza <<entità>> {
+  amministratore
+}
+
+class Sottomissione <<entità>> {
   titolo
   contenuto
   dataOra
-  --
-  creaOAggiorna()
-  registraDataOra()
 }
 
-class Valutazione <<entity>> {
+class Valutazione <<entità>> {
   giudizio
   punteggio
-  --
-  validaPunteggio()
-  registra()
 }
 
-' ===== Ruoli staff e partecipazione (molteplicita' su ENTRAMBE le estremita') =====
-Utente "1"     -- "*"    Hackathon : organizzatore
-Utente "1"     -- "*"    Hackathon : giudice
-Utente "1..*"  -- "*"    Hackathon : mentore
-Team   "0..1"  -- "1..*" Utente    : membro
-Team   "0..1"  -- "1"    Utente    : amministratore
+' ===== Staff: ruolo reificato (Incarico) tra Utente e Hackathon =====
+Utente "1..*" -- "0..*" Hackathon
+(Utente, Hackathon) .. Incarico
+Incarico ..> RuoloStaff
 
-' ===== Iscrizione (reifica Team-Hackathon) e catena del valore =====
-Team       "1" -- "*"    Iscrizione
-Hackathon  "1" -- "*"    Iscrizione
+' ===== Appartenenza a un team: admin reificato come flag (l'admin è un membro) =====
+Utente "1..*" -- "0..1" Team
+(Utente, Team) .. Appartenenza
+
+' ===== Iscrizione: classe associazione Team-Hackathon, e catena del valore =====
+Team "0..*" -- "0..*" Hackathon
+(Team, Hackathon) .. Iscrizione
 Iscrizione "1" *-- "0..1" Sottomissione
 Sottomissione "1" *-- "0..1" Valutazione
-Valutazione "*" -- "1"   Utente : giudice
+Valutazione "*" -- "1" Utente : giudice
 
+' ===== Stato del ciclo di vita =====
 Hackathon ..> Stato
 
+note bottom of Incarico
+  Per ogni Hackathon: 1 Organizzatore, 1 Giudice, 1..* Mentori.
+end note
+
+note bottom of Appartenenza
+  Almeno una Appartenenza per Team ha amministratore = vero
+  (un team può avere più amministratori; ognuno è comunque un membro).
+end note
+
+note bottom of Valutazione
+  punteggio in 0..10.
+  Il giudice coincide con il Giudice (Incarico) dell'Hackathon
+  della relativa Iscrizione.
+end note
+
 legend right
-  Classi di analisi (dominio di business), stereotipo «entity».
-  Lo "stato" e' un attributo/enum; ciclo di vita (pattern State),
-  persistenza e controller sono scelte di PROGETTAZIONE (fuori da questo diagramma).
+  Classi di analisi (dominio di business), stereotipo «entità».
+  Iscrizione, Incarico, Appartenenza: classi-associazione (reificano le relazioni).
+  Stile domain model: niente operazioni (scelte di progettazione rimandate).
 endlegend
 
 @enduml
