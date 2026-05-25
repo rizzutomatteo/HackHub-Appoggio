@@ -1,0 +1,93 @@
+@startuml CLASSI_ANALISI_HackHub
+' Diagramma delle CLASSI DI ANALISI - 1a iterazione HackHub.
+' Solo concetti del dominio di business (no boundary/control): cfr. docs/UML_03_Class.pdf slide 11.
+' Coerente con useCase.puml e CASI_USO_REALIZZATI.md
+' (Crea Hackathon, Crea Team, Iscrive Team, Invia Sottomissione, Valuta Sottomissione).
+hide empty members
+hide circle
+
+enum Stato {
+  InIscrizione
+  InCorso
+  InValutazione
+  Concluso
+}
+
+class Utente <<entity>> {
+  nome
+  email
+  --
+  creaTeam()
+  accettaInvito()
+}
+
+class Hackathon <<entity>> {
+  nome
+  regolamento
+  scadenzaIscrizioni
+  dataInizio
+  dataFine
+  luogo
+  montepremi
+  dimensioneMaxTeam
+  stato : Stato
+  --
+  avanzaStato()
+  verificaComposizioneStaff()
+  elencaSottomissioni()
+}
+
+class Team <<entity>> {
+  nome
+  --
+  aggiungiMembro()
+  iscriviA()
+  inviaSottomissione()
+}
+
+class Iscrizione <<entity>> {
+  --
+  registra()
+  verificaIscrivibilita()
+}
+
+class Sottomissione <<entity>> {
+  titolo
+  contenuto
+  dataOra
+  --
+  creaOAggiorna()
+  registraDataOra()
+}
+
+class Valutazione <<entity>> {
+  giudizio
+  punteggio
+  --
+  validaPunteggio()
+  registra()
+}
+
+' ===== Ruoli staff e partecipazione (molteplicita' su ENTRAMBE le estremita') =====
+Utente "1"     -- "*"    Hackathon : organizzatore
+Utente "1"     -- "*"    Hackathon : giudice
+Utente "1..*"  -- "*"    Hackathon : mentore
+Team   "0..1"  -- "1..*" Utente    : membro
+Team   "0..1"  -- "1"    Utente    : amministratore
+
+' ===== Iscrizione (reifica Team-Hackathon) e catena del valore =====
+Team       "1" -- "*"    Iscrizione
+Hackathon  "1" -- "*"    Iscrizione
+Iscrizione "1" *-- "0..1" Sottomissione
+Sottomissione "1" *-- "0..1" Valutazione
+Valutazione "*" -- "1"   Utente : giudice
+
+Hackathon ..> Stato
+
+legend right
+  Classi di analisi (dominio di business), stereotipo «entity».
+  Lo "stato" e' un attributo/enum; ciclo di vita (pattern State),
+  persistenza e controller sono scelte di PROGETTAZIONE (fuori da questo diagramma).
+endlegend
+
+@enduml
