@@ -1,7 +1,7 @@
 @startuml CLASSI_ANALISI_HackHub
 ' CLASSI DI ANALISI - 1a iterazione HackHub. Solo dominio di business (UML_03 slide 11).
 ' Stile domain model: niente operazioni (UML_03 slide 13). Ruoli staff reificati in Incarico
-' (UML_02 slide 6). Iscrizione e Incarico = classi-associazione (UML_04 slide 10).
+' (UML_02 slide 6). Iscrizione, Incarico e Appartenenza = classi-associazione (UML_04 slide 10).
 ' Coerente con useCase.puml e CASI_USO_REALIZZATI.md (5 UC della 1a iterazione).
 hide empty members
 hide circle
@@ -48,6 +48,10 @@ class Incarico <<entità>> {
   ruolo : RuoloStaff
 }
 
+class Appartenenza <<entità>> {
+  amministratore
+}
+
 class Sottomissione <<entità>> {
   titolo
   contenuto
@@ -64,9 +68,9 @@ Utente "1..*" -- "0..*" Hackathon
 (Utente, Hackathon) .. Incarico
 Incarico ..> RuoloStaff
 
-' ===== Appartenenza a un team =====
-Team "0..1" -- "1..*" Utente : membro
-Team "0..1" --> "1" Utente : amministratore
+' ===== Appartenenza a un team: admin reificato come flag (l'admin è un membro) =====
+Utente "1..*" -- "0..1" Team
+(Utente, Team) .. Appartenenza
 
 ' ===== Iscrizione: classe associazione Team-Hackathon, e catena del valore =====
 Team "0..*" -- "0..*" Hackathon
@@ -82,19 +86,20 @@ note bottom of Incarico
   Per ogni Hackathon: 1 Organizzatore, 1 Giudice, 1..* Mentori.
 end note
 
+note bottom of Appartenenza
+  Almeno una Appartenenza per Team ha amministratore = vero
+  (un team può avere più amministratori; ognuno è comunque un membro).
+end note
+
 note bottom of Valutazione
   punteggio in 0..10.
   Il giudice coincide con il Giudice (Incarico) dell'Hackathon
   della relativa Iscrizione.
 end note
 
-note right of Utente
-  L'amministratore di un Team è uno dei suoi membri.
-end note
-
 legend right
   Classi di analisi (dominio di business), stereotipo «entità».
-  Iscrizione e Incarico: classi-associazione (reificano le relazioni).
+  Iscrizione, Incarico, Appartenenza: classi-associazione (reificano le relazioni).
   Stile domain model: niente operazioni (scelte di progettazione rimandate).
 endlegend
 
