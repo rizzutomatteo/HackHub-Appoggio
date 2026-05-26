@@ -1,0 +1,93 @@
+@startuml SEQ_ValutaSottomissione
+' DIAGRAMMA DI SEQUENZA - Realizzazione "Valuta Sottomissione" (1a iterazione HackHub, UC05).
+' Notazione: UML_05_Interazioni (linee di vita, focus, messaggi sincroni/ritorno/«crea», frammenti alt/opt/loop).
+' Stile UML_05 slide 2: niente tipi dei parametri. Coerente con CLASSI_ANALISI_REALIZZATI.puml e CASI_USO_REALIZZATI.md.
+' Partizionamento EBC: boundary = pagina UI, control = GestoreValutazioni, entity = Hackathon/Stato/Sottomissione/Valutazione.
+' GRASP: Controller, Creator (la Sottomissione "riceve" e crea la Valutazione), Information Expert (valida il punteggio 0..10),
+'        Pure Fabrication (Repository: persistenza, complementare all'EBC).
+' Pattern State (GoF): la valutazione è abilitata solo nello stato InValutazione.
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 250
+
+title Valuta Sottomissione — realizzazione del caso d'uso (UC05) — partizionamento EBC
+
+actor "Giudice" as Giu
+boundary ":PaginaValutazione" as B
+control ":GestoreValutazioni" as GV
+participant ":RepositorySottomissione" as RS <<Pure Fabrication>>
+entity "h:Hackathon" as H
+entity "s:InValutazione" as S
+entity "sub:Sottomissione" as Sub
+participant ":RepositoryValutazione" as RV <<Pure Fabrication>>
+
+Giu -> B : apri l'elenco delle sottomissioni(hackathon)
+activate B
+B -> GV : elencoSottomissioni(hackathon)
+activate GV
+GV -> RS : sottomissioniDi(hackathon)
+RS --> GV : elenco
+GV --> B : elenco
+B --> Giu : mostra elenco sottomissioni
+
+Giu -> B : selezionaSottomissione(sub)
+B -> GV : dettagli(sub)
+GV -> H : valutazioneConsentita()
+activate H
+H -> S : valutazioneConsentita()
+activate S
+S --> H : esito
+deactivate S
+H --> GV : esito
+deactivate H
+note over H, S : Pattern State (GoF): la valutazione è abilitata solo in InValutazione (precondizione).
+GV --> B : dettagli(sub)
+B --> Giu : mostra dettagli della sottomissione
+
+opt la sottomissione è già stata valutata (UC 4.a)
+    B --> Giu : mostra la valutazione esistente (modificabile)
+end
+
+Giu -> B : inserisce giudizio e punteggio, conferma
+B -> GV : valuta(sub, giudizio, punteggio)
+GV -> Sub : registraValutazione(giudizio, punteggio, giudice)
+activate Sub
+Sub -> Sub : verificaPunteggio(punteggio)
+note right of Sub : Information Expert: il punteggio deve essere in 0..10 (UC 7).
+
+alt 0 <= punteggio <= 10  AND  giudizio non vuoto
+    create entity "v:Valutazione" as V
+    Sub -> V : «crea»(giudizio, punteggio, giudice)
+    note right of V
+      Creator: la Sottomissione "riceve" la Valutazione.
+      Se già valutata, registraValutazione aggiorna quella esistente.
+    end note
+    Sub -> RV : salva(v)
+    Sub --> GV
+    GV --> B : esito positivo
+    B --> Giu : conferma registrazione
+else punteggio fuori dall'intervallo 0..10 (UC 7.a)
+    Sub --> GV
+    GV --> B : esito negativo
+    B --> Giu : errore — punteggio ammesso 0..10 (torna ai dettagli)
+else giudizio scritto vuoto (UC 7.b)
+    Sub --> GV
+    GV --> B : esito negativo
+    B --> Giu : il giudizio è obbligatorio (torna ai dettagli)
+end
+deactivate Sub
+deactivate GV
+deactivate B
+
+legend right
+  Realizzazione UC05 "Valuta Sottomissione" (CASI_USO_REALIZZATI.md).
+  --
+  EBC: «boundary» :PaginaValutazione · «control» :GestoreValutazioni · «entity» Hackathon/Stato/Sottomissione/Valutazione.
+  Repository = Pure Fabrication (GRASP), layer di persistenza esterno alla tripletta EBC.
+  GRASP: Controller · Creator · Information Expert · Pure Fabrication.
+  State (GoF): la valutazione è abilitata solo nello stato InValutazione.
+  Vincolo: punteggio in 0..10; il giudice coincide con il Giudice dell'Incarico dell'Hackathon
+  dell'Iscrizione relativa alla Sottomissione (modello di analisi).
+endlegend
+@enduml

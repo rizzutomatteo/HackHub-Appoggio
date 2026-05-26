@@ -1,0 +1,77 @@
+@startuml SEQ_CreaHackathon
+' DIAGRAMMA DI SEQUENZA - Realizzazione "Crea Hackathon" (1a iterazione HackHub, UC01).
+' Notazione: UML_05_Interazioni (linee di vita, focus, messaggi sincroni/ritorno/«crea», frammenti alt/opt/loop).
+' Stile UML_05 slide 2: niente tipi dei parametri. Coerente con CLASSI_ANALISI_REALIZZATI.puml e CASI_USO_REALIZZATI.md.
+' Partizionamento EBC (Boundary–Control–Entity): boundary = pagina UI, control = «UseCaseName»Handler (GRASP Controller,
+' "il C dell'approccio BCE" — PatternsGRASP slide 11), entity = classi di dominio.
+' GRASP: Controller, Creator (l'entità crea i propri legami e lo Stato iniziale), Information Expert,
+'        Pure Fabrication (RepositoryHackathon: layer di persistenza, complementare all'EBC).
+' Pattern State (GoF): lo stato dell'Hackathon è un oggetto polimorfo; alla creazione è InIscrizione.
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 240
+
+title Crea Hackathon — realizzazione del caso d'uso (UC01) — partizionamento EBC
+
+actor "Organizzatore" as Org
+boundary ":PaginaCreaHackathon" as B
+control ":GestoreHackathon" as GH
+participant ":RepositoryHackathon" as Repo <<Pure Fabrication>>
+
+Org -> B : nuovoHackathon()
+activate B
+B --> Org : mostra pagina di inserimento dati
+Org -> B : inserisce dati, seleziona Giudice e Mentori, conferma
+B -> GH : creaHackathon(dati, giudice, mentori)
+activate GH
+
+alt dati validi AND esattamente 1 Giudice AND almeno 1 Mentore
+    create entity "h:Hackathon" as H
+    GH -> H : «crea»(dati)
+    activate H
+    create entity "s:InIscrizione" as S
+    H -> S : «crea»
+    note over H, S
+      Pattern State (GoF): alla creazione lo stato è InIscrizione
+      (invariante di stato del nuovo Hackathon).
+    end note
+    H --> GH
+    deactivate H
+
+    GH -> H : assegnaStaff(giudice, mentori)
+    activate H
+    create entity ":Incarico" as Inc
+    H -> Inc : «crea»
+    note right of Inc
+      Creator: l'Hackathon crea un Incarico per ruolo —
+      1 Organizzatore, 1 Giudice, 1..* Mentori (loop sui Mentori).
+    end note
+    H --> GH
+    deactivate H
+
+    GH -> Repo : salva(h)
+    GH --> B : riepilogo(h)
+    B --> Org : mostra riepilogo (hackathon ora elencato)
+else dati non validi OPPURE vincolo staff violato
+    GH --> B : esito negativo + motivo
+    B --> Org : segnala campi non validi / vincolo "un Giudice e almeno un Mentore"
+end
+deactivate GH
+deactivate B
+
+note over Org, B
+  #.a — In qualunque momento l'Organizzatore può annullare:
+  l'hackathon non viene creato e i dati memorizzati vengono cancellati.
+end note
+
+legend right
+  Realizzazione UC01 "Crea Hackathon" (CASI_USO_REALIZZATI.md).
+  --
+  EBC: «boundary» :PaginaCreaHackathon · «control» :GestoreHackathon · «entity» Hackathon/Stato/Incarico.
+  Repository = Pure Fabrication (GRASP), layer di persistenza esterno alla tripletta EBC.
+  GRASP: Controller · Creator · Information Expert · Pure Fabrication.
+  State (GoF): stato iniziale InIscrizione (l'enum Stato dell'analisi è raffinato in oggetti-stato).
+  Vincolo (Incarico): per ogni Hackathon 1 Organizzatore, 1 Giudice, 1..* Mentori.
+endlegend
+@enduml

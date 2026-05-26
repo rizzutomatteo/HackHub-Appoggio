@@ -75,8 +75,8 @@ Team "0..*" -- "0..*" Hackathon
 (Team, Hackathon) .. Iscrizione
 
 ' ===== Catena del valore =====
-Iscrizione "1" *-- "0..1" Sottomissione : contiene >
-Sottomissione "1" *-- "0..1" Valutazione : riceve >
+Iscrizione "1" -- "0..1" Sottomissione : contiene >
+Sottomissione "1" -- "0..1" Valutazione : riceve >
 Utente "1" -- "0..*" Valutazione : redige >
 
 ' ===== Tipi enumerati =====

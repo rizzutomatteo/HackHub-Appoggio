@@ -1,0 +1,85 @@
+@startuml SEQ_InviaSottomissione
+' DIAGRAMMA DI SEQUENZA - Realizzazione "Invia Sottomissione" (1a iterazione HackHub, UC04).
+' Notazione: UML_05_Interazioni (linee di vita, focus, messaggi sincroni/ritorno/«crea», frammenti alt/opt/loop).
+' Stile UML_05 slide 2: niente tipi dei parametri. Coerente con CLASSI_ANALISI_REALIZZATI.puml e CASI_USO_REALIZZATI.md.
+' Partizionamento EBC: boundary = pagina UI, control = GestoreSottomissioni, entity = Hackathon/Stato/Iscrizione/Sottomissione.
+' GRASP: Controller, Creator (l'Iscrizione "contiene" e crea la Sottomissione), Information Expert,
+'        Pure Fabrication (RepositorySottomissione: persistenza, complementare all'EBC).
+' Pattern State (GoF): l'invio è ammesso solo nello stato InCorso.
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 250
+
+title Invia Sottomissione — realizzazione del caso d'uso (UC04) — partizionamento EBC
+
+actor "Membro del team" as Mem
+boundary ":PaginaSottomissione" as B
+control ":GestoreSottomissioni" as GS
+entity "h:Hackathon" as H
+entity "s:InCorso" as S
+entity "i:Iscrizione" as I
+participant ":RepositorySottomissione" as RS <<Pure Fabrication>>
+
+Mem -> B : apriModulo(iscrizione)
+activate B
+B -> GS : sottomissioneConsentita(iscrizione)
+activate GS
+GS -> H : sottomissioneConsentita()
+activate H
+H -> S : sottomissioneConsentita()
+activate S
+S --> H : esito
+deactivate S
+H --> GS : esito
+deactivate H
+note over H, S
+  Pattern State (GoF): InCorso ammette l'invio;
+  InValutazione lo rifiuta (finestra chiusa) — UC 3.a.
+end note
+
+alt stato = InCorso
+    GS --> B : modulo abilitato
+    B --> Mem : mostra modulo di invio
+    Mem -> B : carica la sottomissione e invia
+    B --> Mem : chiede conferma dell'invio
+    alt il Membro conferma l'invio
+        Mem -> B : conferma
+        B -> GS : inviaSottomissione(dati)
+        GS -> I : creaSottomissione(dati)
+        activate I
+        create entity "sub:Sottomissione" as Sub
+        I -> Sub : «crea»(titolo, contenuto, dataOra = adesso)
+        note right of Sub
+          Creator: l'Iscrizione "contiene" la Sottomissione.
+          dataOra = istante corrente del salvataggio (UC 7).
+        end note
+        I -> RS : salva(sub)
+        I --> GS
+        deactivate I
+        GS --> B : esito positivo
+        B --> Mem : conferma invio
+    else il Membro non conferma / annulla (UC 5.a)
+        B --> Mem : ritorno al modulo di invio
+    end
+else stato = InValutazione (UC 3.a)
+    GS --> B : non consentito
+    B --> Mem : errore — la finestra di invio è chiusa
+end
+deactivate GS
+deactivate B
+
+note over Mem, B
+  #.a — Annullando, il sistema riporta tutto alla situazione precedente all'avvio del caso d'uso.
+end note
+
+legend right
+  Realizzazione UC04 "Invia Sottomissione" (CASI_USO_REALIZZATI.md).
+  --
+  EBC: «boundary» :PaginaSottomissione · «control» :GestoreSottomissioni · «entity» Hackathon/Stato/Iscrizione/Sottomissione.
+  Repository = Pure Fabrication (GRASP), layer di persistenza esterno alla tripletta EBC.
+  GRASP: Controller · Creator · Information Expert · Pure Fabrication.
+  State (GoF): l'invio è ammesso solo in InCorso; in InValutazione la finestra è chiusa.
+  Sottomissione: contenuta nell'Iscrizione (catena del valore Iscrizione→Sottomissione→Valutazione).
+endlegend
+@enduml
