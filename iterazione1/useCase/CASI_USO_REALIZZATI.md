@@ -175,9 +175,8 @@ Specifiche dei 5 casi d'uso della prima iterazione **così come effettivamente m
 
 **Post-condizioni:**
 
-- Il Giudice è autenticato ed è assegnato all'hackathon.
-- L'hackathon è nello stato "in valutazione".
-- Esiste almeno una sottomissione da valutare.
+- La sottomissione selezionata ha una valutazione registrata
+- composta da giudizio testuale e punteggio (0-10) attribuita dal Giudice.
 
 > ⚠️ Nota: le Post-condizioni qui sopra riportano lo stesso testo delle Pre-condizioni (riportato verbatim come fornito). Probabilmente da rivedere: dovrebbero descrivere l'esito (es. "la sottomissione ha una valutazione registrata con giudizio scritto e punteggio 0-10").
 
