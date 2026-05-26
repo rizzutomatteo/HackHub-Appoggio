@@ -1,10 +1,13 @@
 @startuml CLASSI_ANALISI_HackHub
 ' CLASSI DI ANALISI - 1a iterazione HackHub. Solo dominio di business (UML_03 slide 11).
-' Stile domain model: niente operazioni (UML_03 slide 13). Ruoli staff reificati in Incarico
-' (UML_02 slide 6). Iscrizione, Incarico e Appartenenza = classi-associazione (UML_04 slide 10).
-' Coerente con useCase.puml e CASI_USO_REALIZZATI.md (5 UC della 1a iterazione).
+' Stile domain model: niente operazioni (UML_03 slide 13).
+' Iscrizione, Incarico, Appartenenza sono CLASSI-ASSOCIAZIONE (UML_04 slide 10):
+' reificano le relazioni del triangolo Utente-Team-Hackathon.
+' Layout ELK: niente incroci, linee dritte/ortogonali (richiede Java 17: render via Docker).
+' Coerente con useCase.puml e CASI_USO_REALIZZATI.md.
 hide empty members
 hide circle
+!pragma layout elk
 
 enum Stato {
   InIscrizione
@@ -40,16 +43,16 @@ class Team <<entità>> {
   nome
 }
 
-class Iscrizione <<entità>> {
-  dataIscrizione
-}
-
 class Incarico <<entità>> {
   ruolo : RuoloStaff
 }
 
 class Appartenenza <<entità>> {
   amministratore
+}
+
+class Iscrizione <<entità>> {
+  dataIscrizione
 }
 
 class Sottomissione <<entità>> {
@@ -63,44 +66,32 @@ class Valutazione <<entità>> {
   punteggio
 }
 
-' ===== Staff: ruolo reificato (Incarico) tra Utente e Hackathon =====
+' ===== Triangolo Utente-Team-Hackathon con classi-associazione =====
 Utente "1..*" -- "0..*" Hackathon
 (Utente, Hackathon) .. Incarico
-Incarico ..> RuoloStaff
-
-' ===== Appartenenza a un team: admin reificato come flag (l'admin è un membro) =====
 Utente "1..*" -- "0..1" Team
 (Utente, Team) .. Appartenenza
-
-' ===== Iscrizione: classe associazione Team-Hackathon, e catena del valore =====
 Team "0..*" -- "0..*" Hackathon
 (Team, Hackathon) .. Iscrizione
-Iscrizione "1" *-- "0..1" Sottomissione
-Sottomissione "1" *-- "0..1" Valutazione
-Valutazione "*" -- "1" Utente : giudice
 
-' ===== Stato del ciclo di vita =====
+' ===== Catena del valore =====
+Iscrizione "1" *-- "0..1" Sottomissione : contiene >
+Sottomissione "1" *-- "0..1" Valutazione : riceve >
+Utente "1" -- "0..*" Valutazione : redige >
+
+' ===== Tipi enumerati =====
 Hackathon ..> Stato
-
-note bottom of Incarico
-  Per ogni Hackathon: 1 Organizzatore, 1 Giudice, 1..* Mentori.
-end note
-
-note bottom of Appartenenza
-  Almeno una Appartenenza per Team ha amministratore = vero
-  (un team può avere più amministratori; ognuno è comunque un membro).
-end note
-
-note bottom of Valutazione
-  punteggio in 0..10.
-  Il giudice coincide con il Giudice (Incarico) dell'Hackathon
-  della relativa Iscrizione.
-end note
+Incarico ..> RuoloStaff
 
 legend right
-  Classi di analisi (dominio di business), stereotipo «entità».
-  Iscrizione, Incarico, Appartenenza: classi-associazione (reificano le relazioni).
-  Stile domain model: niente operazioni (scelte di progettazione rimandate).
+  Classi di analisi (dominio di business), stereotipo «entità»; stile domain model (niente operazioni).
+  --
+  Iscrizione, Incarico, Appartenenza: classi-associazione (al più un legame per coppia).
+  Incarico: per ogni Hackathon 1 Organizzatore, 1 Giudice, 1..* Mentori.
+  Appartenenza: almeno una per Team ha amministratore = vero
+    (più amministratori possibili; ognuno è comunque un membro).
+  Valutazione: punteggio in 0..10; il giudice coincide con il Giudice (Incarico)
+    dell'Hackathon della relativa Iscrizione.
 endlegend
 
 @enduml

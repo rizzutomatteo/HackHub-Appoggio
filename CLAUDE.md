@@ -31,17 +31,41 @@ Tutti i file il cui nome termina con **`REALIZZATI`** (es. `CASI_USO_REALIZZATI.
 
 La **fonte di verità** di ogni diagramma delle classi è un file di testo **PlantUML** (`.puml`), non un'immagine né un file binario di Visual Paradigm. Il testo è leggibile/diffabile e versionabile; l'immagine renderizzata e il modello in Visual Paradigm sono derivati per la verifica visiva e per il deliverable ufficiale.
 
+### Standard OBBLIGATORIO (da ora vale per OGNI diagramma del progetto)
+
+Il diagramma delle classi di analisi `iterazione1/analisi/CLASSI_ANALISI_CHANGE.puml` è il **riferimento**: ogni diagramma futuro deve riprodurne questi risultati.
+
+1. **Motore di layout**: `!pragma layout elk` (per i diagrammi a grafo: classi, oggetti, componenti, ecc.) → layout ortogonale pulito.
+2. **Leggibilità (requisiti rigidi, da controllare sul render):**
+   - **nessuna linea intrecciata**, nemmeno tra tipi diversi (associazioni, composizioni, dipendenze, connettori di nota);
+   - **nessun allungamento inutile** delle linee;
+   - **linee dritte** (ELK ortogonale), mai curve;
+   - **nessuna scritta** (nome o molteplicità) sovrapposta o **estremamente vicina** ad altro.
+3. **Relazioni**: ogni relazione ha un **nome**; molteplicità su **entrambe** le estremità.
+4. **Vincoli non esprimibili graficamente** → nella **legenda** (niente note appese che si incrociano).
+5. **Verifica visiva obbligatoria**: si **renderizza e si guarda** il PNG/SVG e si itera il layout finché valgono i punti 2-4. Un diagramma non è "fatto" finché il render non è pulito.
+6. **Rendering & condivisione**: render con `./scripts/render-diagrams.sh` (solo Docker; ELK richiede Java 17, già nel container). Si **committano PNG+SVG** accanto al `.puml` per la visione del team.
+7. **Mai stravolgere il modello per la grafica**: si cambia solo il layout, mai entità/relazioni/molteplicità. Se un **ciclo** del modello impone un arco lungo inevitabile, lo si instrada sul margine (senza incroci) e si rifinisce la posizione in **Visual Paradigm**.
+
 Workflow:
 
 1. Il diagramma viene scritto/aggiornato come `.puml` (segue le regole `*REALIZZATI` / `*CHANGE`: es. `CLASS_DIAGRAM_REALIZZATI.puml` non si tocca, le modifiche vanno in `CLASS_DIAGRAM_CHANGE.puml`).
 2. Si renderizza in PNG/SVG per la verifica visiva (estensione PlantUML di VS Code, `plantuml.jar` da CLI con Graphviz, o server PlantUML online).
 3. L'utente ricrea/raffina il diagramma in **Visual Paradigm** per il deliverable.
 
+**Rendering e visione (progetto condiviso):**
+
+- Le immagini renderizzate (PNG/SVG) sono **committate** accanto al `.puml`, così tutto il team le vede senza installare nulla (es. `iterazione1/analisi/CLASSI_ANALISI_HackHub.png`).
+- Per **rigenerarle** dopo una modifica al `.puml`: `./scripts/render-diagrams.sh` — richiede **solo Docker** (Java 17 + ELK + Graphviz stanno nel container `plantuml/plantuml`, non serve installarli in locale).
+- Nota: il layout `!pragma layout elk` (per azzerare gli incroci) è compilato per **Java 17**; i renderer locali con Java più vecchio falliscono (`UnsupportedClassVersionError`). Per questo il render canonico passa da Docker; l'anteprima diretta in VS Code può non funzionare → usa lo script o apri l'immagine committata.
+
 **Scheletro file** (un file per diagramma, con legenda in testa):
 
 ```
 @startuml NomeDiagramma
+!pragma layout elk
 hide empty members
+hide circle
 
 class Hackathon {
   -nome: String
@@ -53,6 +77,8 @@ class Hackathon {
 
 **Visibilità** (sempre esplicita): `+` public, `-` private, `#` protected, `~` package.
 **Membri**: attributi `-nome: Tipo`; operazioni `+metodo(param: Tipo): Ritorno`.
+
+**Stile analisi vs progettazione**: nei diagrammi delle classi di **analisi** (come il riferimento) si usa lo **stile domain model** — **niente operazioni**, tipi e visibilità **omessi** (UML_03 slide 13), relazioni reificate come **classi-associazione**. Visibilità, tipi e operazioni (lo scheletro qui sopra) si aggiungono in fase di **progettazione**.
 
 **Mappa univoca delle relazioni** (sintassi PlantUML fissata per evitare ambiguità):
 
