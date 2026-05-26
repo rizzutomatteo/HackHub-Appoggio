@@ -1,3 +1,7 @@
 # Materiale del corso e testo del progetto (esclusi dal repository)
 docs/
 progetto.MD
+
+# Cache font di Java generata dal render PlantUML in Docker (HOME non impostata)
+/[?]/
+.java/
