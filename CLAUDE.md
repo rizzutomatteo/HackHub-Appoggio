@@ -37,6 +37,12 @@ Workflow:
 2. Si renderizza in PNG/SVG per la verifica visiva (estensione PlantUML di VS Code, `plantuml.jar` da CLI con Graphviz, o server PlantUML online).
 3. L'utente ricrea/raffina il diagramma in **Visual Paradigm** per il deliverable.
 
+**Rendering e visione (progetto condiviso):**
+
+- Le immagini renderizzate (PNG/SVG) sono **committate** accanto al `.puml`, così tutto il team le vede senza installare nulla (es. `iterazione1/analisi/CLASSI_ANALISI_HackHub.png`).
+- Per **rigenerarle** dopo una modifica al `.puml`: `./scripts/render-diagrams.sh` — richiede **solo Docker** (Java 17 + ELK + Graphviz stanno nel container `plantuml/plantuml`, non serve installarli in locale).
+- Nota: il layout `!pragma layout elk` (per azzerare gli incroci) è compilato per **Java 17**; i renderer locali con Java più vecchio falliscono (`UnsupportedClassVersionError`). Per questo il render canonico passa da Docker; l'anteprima diretta in VS Code può non funzionare → usa lo script o apri l'immagine committata.
+
 **Scheletro file** (un file per diagramma, con legenda in testa):
 
 ```
