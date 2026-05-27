@@ -39,13 +39,19 @@ alt dati validi AND esattamente 1 Giudice AND almeno 1 Mentore
     H --> GH
     deactivate H
 
-    GH -> H : assegnaStaff(giudice, mentori)
+    GH -> H : assegnaStaff(organizzatore, giudice, mentori)
     activate H
-    create entity ":Incarico" as Inc
-    H -> Inc : «crea»
-    note right of Inc
-      Creator: l'Hackathon crea un Incarico per ruolo —
-      1 Organizzatore, 1 Giudice, 1..* Mentori (loop sui Mentori).
+    create entity "incO:Incarico" as IncO
+    H -> IncO : «crea»(organizzatore, ruolo = Organizzatore)
+    create entity "incG:Incarico" as IncG
+    H -> IncG : «crea»(giudice, ruolo = Giudice)
+    loop per ogni Mentore selezionato (1..*)
+        create entity "incM:Incarico" as IncM
+        H -> IncM : «crea»(mentore, ruolo = Mentore)
+    end
+    note right of IncM
+      Creator: l'Hackathon crea un Incarico per ogni membro dello staff.
+      Ruoli distinti: 1 Organizzatore, 1 Giudice, 1..* Mentori (loop).
     end note
     H --> GH
     deactivate H
