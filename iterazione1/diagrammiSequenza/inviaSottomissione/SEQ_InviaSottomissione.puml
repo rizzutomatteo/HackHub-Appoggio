@@ -54,9 +54,9 @@ alt stato = InCorso
           Creator: l'Iscrizione "contiene" la Sottomissione.
           dataOra = istante corrente del salvataggio (UC 7).
         end note
-        I -> RS : salva(sub)
-        I --> GS
+        I --> GS : sub
         deactivate I
+        GS -> RS : salva(sub)
         GS --> B : esito positivo
         B --> Mem : conferma invio
     else il Membro non conferma / annulla (UC 5.a)
@@ -77,7 +77,7 @@ legend right
   Realizzazione UC04 "Invia Sottomissione" (CASI_USO_REALIZZATI.md).
   --
   EBC: «boundary» :PaginaSottomissione · «control» :GestoreSottomissioni · «entity» Hackathon/Stato/Iscrizione/Sottomissione.
-  Repository = Pure Fabrication (GRASP), layer di persistenza esterno alla tripletta EBC.
+  Repository = Pure Fabrication (GRASP): solo il controller vi accede; le entità non conoscono la persistenza.
   GRASP: Controller · Creator · Information Expert · Pure Fabrication.
   State (GoF): l'invio è ammesso solo in InCorso; in InValutazione la finestra è chiusa.
   Sottomissione: contenuta nell'Iscrizione (catena del valore Iscrizione→Sottomissione→Valutazione).

@@ -3,8 +3,9 @@
 ' Notazione: UML_05_Interazioni (linee di vita, focus, messaggi sincroni/ritorno/«crea», frammenti alt/opt/loop).
 ' Stile UML_05 slide 2: niente tipi dei parametri. Coerente con CLASSI_ANALISI_REALIZZATI.puml e CASI_USO_REALIZZATI.md.
 ' Partizionamento EBC: boundary = pagina UI, control = GestoreIscrizioni, entity = Hackathon/Stato/Iscrizione.
-' GRASP: Controller, Information Expert (Hackathon conosce stato e dimensioneMaxTeam), Creator (Hackathon crea l'Iscrizione),
-'        Pure Fabrication (RepositoryIscrizione: persistenza, complementare all'EBC).
+' GRASP: Controller (orchestra e parla con il Repository), Information Expert (Hackathon: stato e dimensioneMaxTeam),
+'        Creator (Hackathon crea l'Iscrizione), Pure Fabrication (RepositoryIscrizione: persistenza, fuori dalla tripletta EBC).
+' Le entità NON accedono al Repository: la persistenza è orchestrata dal controller (coerente con Information Expert slide 7).
 ' Pattern State (GoF): l'apertura delle iscrizioni è decisa dallo stato corrente dell'Hackathon.
 hide footbox
 skinparam shadowing false
@@ -24,44 +25,44 @@ Mem -> B : seleziona hackathon e richiede l'iscrizione del team
 activate B
 B -> GI : iscriviTeam(team, hackathon)
 activate GI
-GI -> H : iscrivi(team)
-activate H
 
+GI -> RI : esisteIscrizione(team, hackathon)
+RI --> GI : giàIscritto
+GI -> H : iscrivibile(team)
+activate H
 H -> S : iscrizioneConsentita()
 activate S
 S --> H : esito
 deactivate S
-note over H, S
-  Pattern State (GoF): la richiesta è delegata allo stato corrente.
-  Se lo stato non è InIscrizione (iscrizioni chiuse) rifiuta — UC 4.a per polimorfismo.
+H -> H : verificaDimensione(team)
+H --> GI : esito (stato + dimensione)
+deactivate H
+note over GI, S
+  State (GoF): solo lo stato InIscrizione apre le iscrizioni (UC 4.a, per polimorfismo).
+  Information Expert: l'Hackathon confronta i membri del team con dimensioneMaxTeam (UC 4.c).
+  Il duplicato (UC 4.b) è una query del controller sul Repository.
 end note
 
-H -> RI : esisteIscrizione(team, h)
-RI --> H : esito
-H -> H : verificaDimensione(team)
-note right of H : Information Expert: confronta i membri del team\ncon dimensioneMaxTeam dell'Hackathon (UC 4.c).
-
 alt InIscrizione  AND  team non iscritto  AND  membri team <= dimensioneMaxTeam
+    GI -> H : creaIscrizione(team)
+    activate H
     create entity "i:Iscrizione" as I
     H -> I : «crea»(team, dataIscrizione)
-    H -> RI : salva(i)
-    H --> GI
+    H --> GI : i
+    deactivate H
+    GI -> RI : salva(i)
     GI --> B : esito positivo
     B --> Mem : conferma iscrizione
 else iscrizioni chiuse — stato diverso da InIscrizione (UC 4.a)
-    H --> GI
     GI --> B : esito negativo
     B --> Mem : iscrizione rifiutata + motivo
 else team già iscritto a quell'hackathon (UC 4.b)
-    H --> GI
     GI --> B : esito negativo
     B --> Mem : già iscritto, nessun duplicato
 else membri team oltre la dimensione massima (UC 4.c)
-    H --> GI
     GI --> B : esito negativo
     B --> Mem : superata la dimensione massima del team
 end
-deactivate H
 deactivate GI
 deactivate B
 
@@ -73,7 +74,7 @@ legend right
   Realizzazione UC03 "Iscrivi Team" (CASI_USO_REALIZZATI.md).
   --
   EBC: «boundary» :PaginaIscrizione · «control» :GestoreIscrizioni · «entity» Hackathon/Stato/Iscrizione.
-  Repository = Pure Fabrication (GRASP), layer di persistenza esterno alla tripletta EBC.
+  Repository = Pure Fabrication (GRASP): solo il controller vi accede; le entità non conoscono la persistenza.
   GRASP: Controller · Information Expert · Creator · Pure Fabrication.
   State (GoF): solo lo stato InIscrizione accetta nuove iscrizioni; gli altri stati le rifiutano.
   Iscrizione: classe-associazione Team–Hackathon (al più un legame per coppia).
