@@ -57,7 +57,7 @@ Specifiche dei 5 casi d'uso della prima iterazione **così come effettivamente m
 
 ## Crea Team
 
-**Descrizione:** Un Utente registrato crea un nuovo team, invitando eventualmente altri utenti. Chi crea il team ne diventa il primo membro (e amministratore).
+**Descrizione:** Un Utente registrato crea un nuovo team. Chi crea il team ne diventa il primo membro (e amministratore).
 
 **Pre-condizioni:**
 
@@ -67,7 +67,6 @@ Specifiche dei 5 casi d'uso della prima iterazione **così come effettivamente m
 
 - Esiste un nuovo team persistito.
 - L'Utente creatore risulta membro (ed amministratore) del team.
-- Gli eventuali inviti agli altri utenti sono stati registrati/inviati.
 - _oppure_
 - l'operazione viene annullata
 
@@ -75,15 +74,14 @@ Specifiche dei 5 casi d'uso della prima iterazione **così come effettivamente m
 
 1. Il caso d'uso ha inizio quando l'Utente richiede la creazione di un nuovo team.
 2. SYSTEM verifica che l'Utente non appartenga già ad un team.
-3. SYSTEM presenta il modulo (nome del team ed elenco di utenti da invitare).
-4. l'Utente inserisce il nome del team e seleziona gli utenti da invitare.
-   - **4.a.** Nome del team mancante o già in uso:
-     - 4.a.1. SYSTEM segnala l'errore
-     - 4.a.2. jump to 4. l'Utente inserisce il...
+3. SYSTEM presenta il modulo (nome del team).
+4. l'Utente inserisce il nome del team.
+   4.a. Nome del team mancante o già in uso:
+   4.a.1. SYSTEM segnala l'errore
+   4.a.2. jump to 4. l'Utente inserisce il...
 5. l'Utente conferma
 6. SYSTEM crea il team e vi associa l'Utente come membro/amministratore.
-7. SYSTEM invia gli inviti agli utenti selezionati.
-8. SYSTEM conferma la creazione del team.
+7. SYSTEM conferma la creazione del team.
 
 - **#.a.** In qualunque momento l'Utente annulla: nessun team viene creato.
   - #.a.1. exit Scenario

@@ -28,9 +28,9 @@ RU --> GT : esito
 
 alt l'utente non appartiene ad alcun team
     GT --> B : ok
-    B --> Ut : mostra modulo (nome, invitati)
-    Ut -> B : inserisce nome e invitati, conferma
-    B -> GT : creaTeam(nome, invitati)
+    B --> Ut : mostra modulo (nome)
+    Ut -> B : inserisce nome, conferma
+    B -> GT : creaTeam(nome)
     GT -> RT : esisteNome(nome)
     RT --> GT : esito
     alt nome presente e non già in uso
@@ -46,9 +46,6 @@ alt l'utente non appartiene ad alcun team
         T --> GT
         deactivate T
         GT -> RT : salva(t)
-        loop per ogni utente invitato
-            GT -> RU : inviaInvito(invitato, t)
-        end
         GT --> B : confermaCreazione(t)
         B --> Ut : conferma creazione team
     else nome mancante o già in uso
@@ -73,6 +70,6 @@ legend right
   Repository = Pure Fabrication (GRASP), layer di persistenza esterno alla tripletta EBC.
   GRASP: Controller · Creator · Information Expert · Pure Fabrication.
   Vincolo: un Utente può appartenere ad un solo Team (precondizione verificata al passo 2).
-  L'invio degli inviti è una notifica: candidato a pattern Observer in iterazioni successive.
+  Inviti agli altri utenti: non realizzati in questa iterazione (feature futura).
 endlegend
 @enduml
