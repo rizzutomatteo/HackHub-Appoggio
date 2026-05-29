@@ -1,0 +1,66 @@
+@startuml SEQ_CreaHackathon
+' Trascrizione fedele di diagrammiSequenza_REALIZZATI/Crea Hackathon.jpg
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Crea Hackathon
+
+actor "Organizzatore" as Org
+boundary "PaginaCreaHackathon" as B
+control "GestoreHackathon" as GH
+participant "RepoHackathon" as Repo <<pure fabrication>>
+
+Org -> B : nuovoHackathon()
+activate B
+B --> Org : mostraPaginaInserimentoDati
+Org -> B : inserisceDati(nome, datalnizio, dataFine, luogo, regolamento, scadenzaIscrizioni, dimesioneMaxTeam, montepremi, giudice, mentori)
+B -> GH : creaHackathon(nome, datalnizio, dataFine, luogo, regolamento, scadenzaIscrizioni, dimesioneMaxTeam, montepremi, giudice, mentori)
+activate GH
+
+alt dati non validi OPPURE vincolo staff violato
+    GH --> B : esito negativo + motivo
+    B --> Org : segnala campi non validi / vincolo "un giudice e almeno un mentore"
+else dati validi AND esattamente 1 Giudice AND almeno 1 Mentore
+    create entity "Hackathon" as H
+    GH -> H : <<crea>>(nome, datalnizio, dataFine, descrizione, regolamento, scadenzaIscrizioni, maxPartecipanti, premio)
+    activate H
+    create entity "s : InIscrizione" as S
+    H -> S : <<crea>>
+    note right of S
+      Pattern State: alla creazione l'hackathon è in
+      iscrizione (invariante di stato del nuovo hackathon)
+    end note
+    H --> GH
+    deactivate H
+
+    GH -> H : assegnaStaff(Organizzatore, Giudice, Mentori)
+    activate H
+    create entity "incO : Incarico" as IncO
+    H -> IncO : <<crea>>(organizzatore, ruolo = Organizzatore)
+    create entity "incG : Incarico" as IncG
+    H -> IncG : <<crea>>(giudice, ruolo = Giudice)
+    loop per ogni mentore selezionato (1..*)
+        create entity "incM : Incarico" as IncM
+        H -> IncM : <<crea>>(mentore, ruolo = Mentore)
+    end
+    note right of IncM
+      L'hackathon crea un incarico per ogni membro dello staff.
+      Ruoli distinti: 1 Organizzatore, 1 Giudice, 1..* più Mentori (loop)
+    end note
+    H --> GH
+    deactivate H
+
+    GH -> Repo : salva(h)
+    GH --> B : riepilogo(h)
+    B --> Org : mostraRiepilogo(hackathon ora elencato)
+end
+deactivate GH
+deactivate B
+
+note over Org, B
+  In qualunque momento l'organizzatore può annullare l'operazione:
+  L'hackathon non viene creato e i dati salvati vengono cancellati
+end note
+@enduml

@@ -1,0 +1,76 @@
+@startuml SEQ_IscriviTeam
+' Trascrizione fedele di diagrammiSequenza_REALIZZATI/Iscrive Team.jpg
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Iscrive Team
+
+actor "MembroTeam" as Mem
+boundary "PaginaIscrizione" as B
+control "GestoreIscrizioni" as GI
+entity "h : Hackathon" as H
+entity "s : InIscrizione" as S
+participant "RepoIscrizione" as RI <<pure fabrication>>
+
+Mem -> B : seleziona l'Hackathon e richiede l'iscrizione del team
+activate B
+B -> GI : iscriviTeam(team, hackathon)
+activate GI
+GI -> RI : esisteIscrizione(team, hackathon)
+
+alt team già iscritto
+    RI --> GI : giàIscritto
+    GI --> B : esito negativo
+    B --> Mem : già iscritto, nessun duplicato
+else team non iscritto
+    RI --> GI : nonIscritto
+    GI -> H : iscrivibile(team)
+    activate H
+    H -> S : iscrizioneConsentita()
+    activate S
+
+    alt iscrizioni chiuse - stato diverso da InIscrizione
+        S --> H : esito negativo
+        deactivate S
+        H --> GI : esito negativo
+        deactivate H
+        GI --> B : esito negativo
+        B --> Mem : iscrizione rifiutata + motivo
+        note over GI, S
+          Ci si può iscrivere solo quando
+          l'hackathon è nello stato InIscrizione
+        end note
+    else stato InIscrizione
+        S --> H : esito positivo
+        deactivate S
+        H -> H : verificaDimensione(team)
+
+        alt membri del team oltre la dimensione massima
+            H --> GI : esito negativo
+            deactivate H
+            GI --> B : esito negativo
+            B --> Mem : superata la dimensione massima del team
+        else membri team <= dimensioneMaxTeam
+            H --> GI : esito positivo
+            deactivate H
+            GI -> H : creaIscrizione(team)
+            activate H
+            create entity "i : Iscrizione" as I
+            H -> I : <<crea>>(team, dataIscrizione)
+            H --> GI : i
+            deactivate H
+            GI -> RI : salva(i)
+            GI --> B : esito positivo
+            B --> Mem : conferma iscrizione
+        end
+    end
+end
+deactivate GI
+deactivate B
+
+note over Mem, B
+  In qualunque momento il Membro può annullare l'operazione
+end note
+@enduml

@@ -1,0 +1,271 @@
+@startuml CLASSI_PROGETTO_HackHub
+' DIAGRAMMA DELLE CLASSI DI PROGETTAZIONE - HackHub, 1a iterazione.
+' Stile progettazione (UML_07 slide 3-4): visibilità esplicita, tipi, signature operazioni.
+' Pattern adottati:
+'   - State (GoF, Design Patterns): Stato astratto + InIscrizione/InCorso/InValutazione/Concluso.
+'   - GRASP: Controller, Creator, Information Expert, Pure Fabrication, Polymorphism.
+' Coerente con CLASSI_ANALISI_REALIZZATI.puml, CASI_USO_REALIZZATI.md, e i 5 sequence diagrams (UC01-UC05).
+!pragma layout elk
+hide empty members
+hide circle
+
+' =========================================================
+' LAYER 1 - Boundary («boundary»)
+' =========================================================
+class PaginaCreaHackathon <<boundary>> {
+  + nuovoHackathon(): void
+  + inserisceDati(nome: String, dataInizio: Date, dataFine: Date, luogo: String, regolamento: String, scadenzaIscrizioni: Date, dimensioneMaxTeam: Integer, montepremi: Real, giudice: Utente, mentori: List<Utente>): void
+}
+
+class PaginaCreaTeam <<boundary>> {
+  + nuovoTeam(): void
+  + inserisceNome(nome: String): void
+}
+
+class PaginaIscrizione <<boundary>> {
+  + richiediIscrizione(team: Team, hackathon: Hackathon): void
+}
+
+class PaginaSottomissione <<boundary>> {
+  + apriModulo(iscrizione: Iscrizione): void
+  + caricaInvia(titolo: String, contenuto: String): void
+  + conferma(): void
+  + annulla(): void
+}
+
+class PaginaValutazione <<boundary>> {
+  + apriElenco(hackathon: Hackathon): void
+  + selezionaSottomissione(sub: Sottomissione): void
+  + valuta(giudizio: String, punteggio: Integer): void
+}
+
+' =========================================================
+' LAYER 2 - Control («control») - GRASP Controller
+' =========================================================
+class GestoreHackathon <<control>> {
+  + creaHackathon(nome: String, dataInizio: Date, dataFine: Date, luogo: String, regolamento: String, scadenzaIscrizioni: Date, dimensioneMaxTeam: Integer, montepremi: Real, giudice: Utente, mentori: List<Utente>): Boolean
+}
+
+class GestoreTeam <<control>> {
+  + iniziaCreazioneTeam(utente: Utente): Boolean
+  + creaTeam(nome: String): Boolean
+}
+
+class GestoreIscrizioni <<control>> {
+  + iscriviTeam(team: Team, hackathon: Hackathon): Boolean
+}
+
+class GestoreSottomissioni <<control>> {
+  + sottomissioneConsentita(iscrizione: Iscrizione): Boolean
+  + inviaSottomissione(iscrizione: Iscrizione, titolo: String, contenuto: String): Boolean
+}
+
+class GestoreValutazioni <<control>> {
+  + elencoSottomissioni(hackathon: Hackathon): List<Sottomissione>
+  + dettagli(sub: Sottomissione): Sottomissione
+  + valuta(sub: Sottomissione, giudizio: String, punteggio: Integer): Boolean
+}
+
+' =========================================================
+' LAYER 3 - Domain Entities («entity»)
+' =========================================================
+class Utente <<entity>> {
+  - nome: String
+  - email: String
+}
+
+class Hackathon <<entity>> {
+  - nome: String
+  - regolamento: String
+  - scadenzaIscrizioni: Date
+  - dataInizio: Date
+  - dataFine: Date
+  - luogo: String
+  - montepremi: Real
+  - dimensioneMaxTeam: Integer
+  - stato: Stato
+  + assegnaStaff(organizzatore: Utente, giudice: Utente, mentori: List<Utente>): void
+  + iscrivibile(team: Team): Boolean
+  - verificaDimensione(team: Team): Boolean
+  + creaIscrizione(team: Team): Iscrizione
+  + iscrizioneConsentita(): Boolean
+  + sottomissioneConsentita(): Boolean
+  + valutazioneConsentita(): Boolean
+}
+
+class Team <<entity>> {
+  - nome: String
+}
+
+class Incarico <<entity>> {
+  - ruolo: RuoloStaff
+}
+
+class Appartenenza <<entity>> {
+  - amministratore: Boolean
+}
+
+class Iscrizione <<entity>> {
+  - dataIscrizione: Date
+  + creaSottomissione(titolo: String, contenuto: String): Sottomissione
+}
+
+class Sottomissione <<entity>> {
+  - titolo: String
+  - contenuto: String
+  - dataOra: DateTime
+  + registraValutazione(giudizio: String, punteggio: Integer, giudice: Utente): Valutazione
+}
+
+class Valutazione <<entity>> {
+  - giudizio: String
+  - punteggio: Integer
+}
+
+' =========================================================
+' Pattern State (GoF) - Stato astratto + 4 concreti
+' (Hackathon è il Context; delega le decisioni di stato per polimorfismo.)
+' =========================================================
+abstract class Stato {
+  + iscrizioneConsentita(): Boolean
+  + sottomissioneConsentita(): Boolean
+  + valutazioneConsentita(): Boolean
+}
+
+class InIscrizione {
+  + iscrizioneConsentita(): Boolean
+}
+
+class InCorso {
+  + sottomissioneConsentita(): Boolean
+}
+
+class InValutazione {
+  + valutazioneConsentita(): Boolean
+}
+
+class Concluso {
+}
+
+' =========================================================
+' Enum
+' =========================================================
+enum RuoloStaff {
+  Organizzatore
+  Giudice
+  Mentore
+}
+
+' =========================================================
+' LAYER 4 - Repository (interfacce «pure fabrication»)
+' Solo i Controller vi accedono; le entità non conoscono la persistenza.
+' =========================================================
+interface RepoUtente <<pure fabrication>> {
+  + appartieneAdUnTeam(u: Utente): Boolean
+}
+
+interface RepoHackathon <<pure fabrication>> {
+  + salva(h: Hackathon): void
+}
+
+interface RepoTeam <<pure fabrication>> {
+  + esisteNome(nome: String): Boolean
+  + salva(t: Team): void
+}
+
+interface RepoIscrizione <<pure fabrication>> {
+  + esisteIscrizione(team: Team, hackathon: Hackathon): Boolean
+  + salva(i: Iscrizione): void
+}
+
+interface RepoSottomissione <<pure fabrication>> {
+  + salva(sub: Sottomissione): void
+  + sottomissioniDi(h: Hackathon): List<Sottomissione>
+}
+
+interface RepoValutazione <<pure fabrication>> {
+  + salva(v: Valutazione): void
+}
+
+' =========================================================
+' RELAZIONI
+' =========================================================
+
+' --- Pattern State: generalizzazione ---
+Stato <|-- InIscrizione
+Stato <|-- InCorso
+Stato <|-- InValutazione
+Stato <|-- Concluso
+
+' --- Context <-> State ---
+Hackathon "0..*" --> "1" Stato : stato corrente
+
+' --- Triangolo del dominio (con classi-associazione) ---
+Utente "1..*" -- "0..*" Hackathon
+(Utente, Hackathon) .. Incarico
+
+Utente "1..*" -- "0..1" Team
+(Utente, Team) .. Appartenenza
+
+Team "0..*" -- "0..*" Hackathon
+(Team, Hackathon) .. Iscrizione
+
+' --- Catena del valore (composizioni) ---
+Iscrizione "1" *-- "0..1" Sottomissione : contiene
+Sottomissione "1" *-- "0..1" Valutazione : riceve
+Utente "1" -- "0..*" Valutazione : redige
+
+' --- Dipendenza enum ---
+Incarico ..> RuoloStaff
+
+' --- EBC: Boundary -> Control ---
+PaginaCreaHackathon ..> GestoreHackathon
+PaginaCreaTeam ..> GestoreTeam
+PaginaIscrizione ..> GestoreIscrizioni
+PaginaSottomissione ..> GestoreSottomissioni
+PaginaValutazione ..> GestoreValutazioni
+
+' --- Control -> Repository (Pure Fabrication) ---
+GestoreHackathon ..> RepoHackathon
+GestoreTeam ..> RepoUtente
+GestoreTeam ..> RepoTeam
+GestoreIscrizioni ..> RepoIscrizione
+GestoreSottomissioni ..> RepoSottomissione
+GestoreValutazioni ..> RepoSottomissione
+GestoreValutazioni ..> RepoValutazione
+
+' --- Control -> Entity (uso/orchestrazione) ---
+GestoreHackathon ..> Hackathon
+GestoreTeam ..> Team
+GestoreIscrizioni ..> Hackathon
+GestoreSottomissioni ..> Iscrizione
+GestoreSottomissioni ..> Hackathon
+GestoreValutazioni ..> Sottomissione
+GestoreValutazioni ..> Hackathon
+
+' =========================================================
+legend right
+  **Diagramma delle classi di PROGETTAZIONE** - HackHub (1a iterazione).
+  --
+  **Stereotipi:** «boundary» pagine UI · «control» Gestori (Controller GRASP) ·
+  «entity» dominio · «pure fabrication» Repository (interfacce).
+  --
+  **Pattern State (GoF):** Stato (astratto) + InIscrizione / InCorso / InValutazione / Concluso (concreti).
+  Hackathon è il Context: delega iscrizioneConsentita(), sottomissioneConsentita(),
+  valutazioneConsentita() allo stato corrente (Polymorphism).
+  --
+  **GRASP:** Controller (Gestori) · Creator (composizioni: Hackathon->Stato/Incarico,
+  Team->Appartenenza, Iscrizione->Sottomissione, Sottomissione->Valutazione) ·
+  Information Expert (Hackathon su verificaDimensione; Iscrizione su 0..1 Sottomissione;
+  Valutazione su invariante 0..10) · Pure Fabrication (Repository) · Polymorphism (delega State).
+  --
+  **Vincoli (non grafici):**
+  • Hackathon: esattamente 1 Organizzatore, 1 Giudice, 1..* Mentori (Incarico).
+  • Team: almeno una Appartenenza ha amministratore = vero.
+  • Valutazione: 0 <= punteggio <= 10; giudizio non vuoto; il giudice
+    coincide col Giudice dell'Incarico dell'Hackathon dell'Iscrizione relativa alla Sottomissione.
+  • Iscrizione: contiene al piu' una Sottomissione (re-invio sovrascrive - UC04 passo 7).
+  • Un Utente appartiene al piu' a un Team (Appartenenza, molteplicita 0..1).
+endlegend
+
+@enduml

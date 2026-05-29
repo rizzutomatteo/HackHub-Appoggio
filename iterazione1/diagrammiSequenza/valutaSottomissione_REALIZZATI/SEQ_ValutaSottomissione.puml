@@ -1,0 +1,79 @@
+@startuml SEQ_ValutaSottomissione
+' Trascrizione fedele di diagrammiSequenza_REALIZZATI/Valuta Sottomissione.jpg
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Valuta Sottomissione
+
+actor "Giudice" as Giu
+boundary "PaginaValutazione" as B
+control "GestoreValutazioni" as GV
+participant "RepoSottomissione" as RS <<pure fabrication>>
+entity "h : Hackathon" as H
+entity "s : InValutazione" as S
+entity "sub : Sottomissione" as Sub
+participant "RepoValutazione" as RV <<pure fabrication>>
+
+Giu -> B : apri l'elenco delle sottomissioni(hackathon)
+activate B
+B -> GV : elencoSottomissioni(hackathon)
+activate GV
+GV -> RS : sottomissioniDi(hackathon)
+RS --> GV : elenco
+GV --> B : elenco
+B --> Giu : mostra elenco sottomissioni
+
+Giu -> B : selezionaSottomissione(sub)
+B -> GV : dettagli(sub)
+GV -> H : valutazioneConsentita()
+activate H
+H -> S : valutazioneConsentita()
+activate S
+S --> H : esito
+deactivate S
+H --> GV : esito
+deactivate H
+GV --> B : dettagli(sub)
+B --> Giu : mostra dettagli della sottomissione
+note over H, S
+  Pattern State: la valutazione è abilitata
+  solo in inValutazione (precondizione)
+end note
+
+opt la sottomissione è già stata valutata
+    B --> Giu : mostra valutazione esistente (modificabile)
+end
+
+Giu -> B : inserisce giudizio e punteggio, conferma
+B -> GV : valuta(sub, giudizio, punteggio)
+GV -> Sub : registraValutazione(giudizio, punteggio, giudice)
+activate Sub
+note over Sub
+  La sottomissione "riceve" la propria Valutazione
+  (se già valutata, registraValutazione aggiorna quella esistente)
+end note
+
+alt giudizio scritto vuoto
+    Sub --> GV : giudizio mancante
+    deactivate Sub
+    GV --> B : esito negativo
+    B --> Giu : il giudizio è obbligatorio (torna ai dettagli)
+else punteggio fuori dall'intervallo 0..10
+    Sub --> GV : punteggio non valido
+    deactivate Sub
+    GV --> B : esito negativo
+    B --> Giu : errore - punteggio ammesso 0..10 (torna ai dettagli)
+else 0 <= punteggio <= 10 AND giudizio non vuoto
+    create entity "v : Valutazione" as V
+    Sub -> V : <<crea>>(giudizio, punteggio, giudice)
+    Sub --> GV : v
+    deactivate Sub
+    GV -> RV : salva(v)
+    GV --> B : esito positivo
+    B --> Giu : conferma registrazione
+end
+deactivate GV
+deactivate B
+@enduml

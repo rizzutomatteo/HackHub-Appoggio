@@ -1,0 +1,62 @@
+@startuml SEQ_CreaTeam
+' Trascrizione fedele di diagrammiSequenza_REALIZZATI/Crea Team.jpg
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Crea Team
+
+actor "Utente" as Ut
+boundary "PaginaCreaTeam" as B
+control "GestoreTeam" as GT
+participant "RepoUtente" as RU <<pure fabrication>>
+participant "RepoTeam" as RT <<pure fabrication>>
+
+Ut -> B : nuovoTeam()
+activate B
+B -> GT : iniziaCreazioneTeam(utente)
+activate GT
+GT -> RU : appartieneAdUnTeam(utente)
+RU --> GT : esito
+
+alt l'utente appartiene già ad un team
+    GT --> B : non consentito
+    B --> Ut : operazione non consentita
+else l'utente non appartiene ad alcun team
+    GT --> B : ok
+    B --> Ut : mostra modulo (nome)
+    Ut -> B : inserisce nome, conferma
+    B -> GT : creaTeam(nome)
+    GT -> RT : esisteNome(nome)
+    RT --> GT : esito
+
+    alt nome mancante o già in uso
+        GT --> B : esito negativo
+        B --> Ut : segnala errore (torna all'inserimento dati)
+    else nome presente e non già in uso
+        create entity "t : Team" as T
+        GT -> T : <<crea>>(nome)
+        activate T
+        create entity "Appartenenza" as App
+        T -> App : <<crea>>(utente, amministratore = vero)
+        note right of App
+          Il Team crea l' appartenenza del creatore
+          come membro/amministratore,
+          classe associazione Utente-Team
+        end note
+        T --> GT
+        deactivate T
+        GT -> RT : salva(t)
+        GT --> B : confermaCreazione(t)
+        B --> Ut : confermaCreazioneTeam
+    end
+end
+deactivate GT
+deactivate B
+
+note over Ut, B
+  In qualunque momento l'utente può annullare:
+  nessun team viene creato
+end note
+@enduml

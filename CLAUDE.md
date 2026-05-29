@@ -96,6 +96,40 @@ Regole anti-errore:
 - Ogni associazione/aggregazione/composizione porta **sempre** la molteplicità su entrambe le estremità.
 - I termini e le notazioni vanno allineati a `docs/UML_03_Class.pdf` e `docs/UML_04_Relazioni.pdf` (vedi sezione successiva).
 
+## Convenzioni diagrammi di sequenza (PlantUML e Visual Paradigm)
+
+### Ordinamento dei rami in `alt` / `opt`
+
+Nei frammenti combinati `alt` / `opt` (e nei loro annidamenti), gli operandi vanno ordinati mettendo **prima la condizione negativa / di errore** — tipicamente una guard breve seguita da uno o due messaggi di rifiuto — e poi il **caso positivo / happy path** (di solito molto più lungo) nell'`else` finale.
+
+**Perché.** Se l'happy path lungo viene prima, in fondo al frammento si "ammucchiano" i rami d'errore: la guard di ciascuno sta in cima al suo operando, ma il messaggio di rifiuto sta in fondo, e con un happy path lungo la distanza visiva guard↔esito esplode — leggendo il diagramma non si capisce più a quale condizione si riferisce ciascun "esito negativo". Mettendo prima il negativo corto, ogni guard resta adiacente alla propria freccia di rifiuto e l'happy path lungo viene scaricato alla fine, dove non interferisce con la lettura degli altri rami.
+
+**`alt` a più di 2 operandi.** Tutti i rami d'errore prima del success branch, possibilmente in ordine di brevità (il più corto per primo). Il success branch resta sempre per ultimo nell'`else`.
+
+**Esempio.**
+
+```
+' BUONO
+alt stato = InValutazione (UC 3.a)
+    GS --> B : non consentito
+    B --> Mem : errore — finestra chiusa
+else stato = InCorso
+    ... happy path lungo: modulo, carica, conferma, crea, salva ...
+end
+```
+
+```
+' DA EVITARE
+alt stato = InCorso
+    ... happy path lungo: modulo, carica, conferma, crea, salva ...
+else stato = InValutazione (UC 3.a)
+    GS --> B : non consentito
+    B --> Mem : errore — finestra chiusa
+end
+```
+
+**Vale anche in Visual Paradigm:** ordinare gli operandi del frammento `alt` / `opt` con lo stesso criterio nel diagramma rifinito per il deliverable.
+
 ## Documentazione di riferimento
 
 Per qualsiasi scelta progettuale (notazione UML, processo, requirements engineering, qualità, architettura, design pattern, ecc.) fare riferimento **esclusivamente** a:

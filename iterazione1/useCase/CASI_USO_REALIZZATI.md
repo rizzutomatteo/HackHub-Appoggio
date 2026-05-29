@@ -152,7 +152,7 @@ Specifiche dei 5 casi d'uso della prima iterazione **così come effettivamente m
    - **5.a.** il Membro del team non da la conferma e annulla l'operazione
      - 5.a.1. jump to 3. SYSTEM mostra il modulo per...
 6. Membro del team conferma l'invio
-7. SYSTEM salva la sottomissione con la data e l'ora corrente
+7. SYSTEM salva la sottomissione (la crea se è la prima volta del team, altrimenti aggiorna quella esistente) con la data e l'ora corrente.
 
 - **#.a.** Membro del team annulla l'operazione
   - #.a.1. SYSTEM riporta tutto alla situazione prima dell'avvio del caso d'uso

@@ -1,0 +1,76 @@
+@startuml SEQ_InviaSottomissione
+' Trascrizione fedele di diagrammiSequenza_REALIZZATI/Invia Sottomissione.jpg
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Invia Sottomissione
+
+actor "MembroTeam" as Mem
+boundary "PaginaSottomissione" as B
+control "GestoreSottomissioni" as GS
+entity "h : Hackathon" as H
+entity "s : InCorso" as S
+entity "i : Iscrizione" as I
+participant "RepoSottomissione" as RS <<pure fabrication>>
+
+Mem -> B : apriModulo(iscrizione)
+activate B
+B -> GS : sottomissioneConsentita(iscrizione)
+activate GS
+GS -> H : sottomissioneConsentita()
+activate H
+H -> S : sottomissioneConsentita()
+activate S
+S --> H : esito
+deactivate S
+H --> GS : esito
+deactivate H
+note over H, S
+  Pattern State: InCorso ammette l'invio;
+  InValutazione lo rifiuta (finestra chiusa)
+end note
+
+alt stato = inValutazione
+    GS --> B : non consentito
+    B --> Mem : errore - la finestra di invio è chiusa
+else stato = inCorso
+    GS --> B : modulo abilitato
+    B --> Mem : mostra modulo di invio
+    Mem -> B : carica la sottomissione e invia
+    B --> Mem : chiede conferma dell'invio
+
+    alt il Membro non conferma l'invio
+        Mem -> B : non conferma
+        B --> Mem : ritorna al modulo di invio
+    else il Membro conferma l'invio
+        Mem -> B : conferma
+        B -> GS : inviaSottomissione(dati)
+        GS -> I : creaSottomissione(dati)
+        activate I
+        create entity "sub : Sottomissione" as Sub
+        I -> Sub : <<crea>>(titolo, contenuto, dataOra = adesso)
+        I -> I : sottomissione = sub
+        note right of Sub
+          l'Iscrizione "contiene" la Sottomissione
+          Vincolo 0..1: la Iscrizione mantiene la sola sottomissione
+          del momento; un re-invio sovrascrive la precedente
+          (non si tiene storico)
+          dataOra = istante del salvataggio (UC 7)
+        end note
+        I --> GS : sub
+        deactivate I
+        GS -> RS : salva(sub)
+        GS --> B : esito positivo
+        B --> Mem : conferma invio
+    end
+end
+deactivate GS
+deactivate B
+
+note over Mem, B
+  Annullando, il sistema riporta tutto alla situazione
+  precedente all'avvio del caso d'uso
+end note
+@enduml
