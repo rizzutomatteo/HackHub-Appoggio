@@ -5,3 +5,7 @@ progetto.MD
 # Cache font di Java generata dal render PlantUML in Docker (HOME non impostata)
 /[?]/
 .java/
+
+# File temporanei e di backup di Visual Paradigm (non versionare)
+*.lck
+*.vpp.bak*
