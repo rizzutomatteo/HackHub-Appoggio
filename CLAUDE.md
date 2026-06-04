@@ -138,3 +138,15 @@ Per qualsiasi scelta progettuale (notazione UML, processo, requirements engineer
 2. In aggiunta, eventualmente, la **documentazione online ufficiale di Visual Paradigm** (lo strumento usato per la modellazione UML).
 
 Non introdurre convenzioni, notazioni o pattern che non siano supportati da queste fonti.
+
+## Git multi-account e commit spalmati nel tempo
+
+Questa cartella usa più account GitHub dalla stessa macchina. Segui sempre le
+istruzioni multi-account quando fai commit, push o gestisci le identità git.
+
+@./git-multi-account.md
+
+Per creare una serie di commit ripartiti tra i 3 account, in ordine logico e con
+date/ore spalmate in un intervallo, segui il playbook qui sotto.
+
+@./commit-spalmati-howto.md
