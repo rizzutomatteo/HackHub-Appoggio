@@ -150,3 +150,11 @@ Per creare una serie di commit ripartiti tra i 3 account, in ordine logico e con
 date/ore spalmate in un intervallo, segui il playbook qui sotto.
 
 @./commit-spalmati-howto.md
+
+### Repo del codice indipendente
+
+La cartella `iterazione1/codice/` è anche un **secondo repo Git indipendente** (per il
+GitHub ufficiale del solo codice), separato da questo repo di appoggio. Si opera con il
+comando `codice` (analogo a `git`). Funzionamento, regole e gotcha nel file qui sotto.
+
+@./codice-repo-howto.md
