@@ -1,5 +1,6 @@
 package it.unicam.cs.ids.hackhub.boundary;
 
+import it.unicam.cs.ids.hackhub.entity.Utente;
 import it.unicam.cs.ids.hackhub.service.ServiceTeam;
 
 public class HandlerCreaTeam {
@@ -10,7 +11,9 @@ public class HandlerCreaTeam {
         this.service = service;
     }
 
-    public void nuovoTeam() {
+    // utente = utente autenticato (stub: autenticazione fuori scope in iter.1)
+    public void nuovoTeam(Utente utente) {
+        service.iniziaCreazioneTeam(utente);
     }
 
     public void inserisceNome(String nome) {

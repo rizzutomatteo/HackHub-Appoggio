@@ -9,12 +9,15 @@ import java.util.List;
 public class HandlerCreaHackathon {
 
     private final ServiceHackathon service;
+    private Utente organizzatoreCorrente;
 
     public HandlerCreaHackathon(ServiceHackathon service) {
         this.service = service;
     }
 
-    public void nuovoHackathon() {
+    // organizzatore = utente autenticato (stub: autenticazione fuori scope in iter.1)
+    public void nuovoHackathon(Utente organizzatore) {
+        this.organizzatoreCorrente = organizzatore;
     }
 
     public void inserisceDati(String nome,
@@ -35,6 +38,7 @@ public class HandlerCreaHackathon {
                               scadenzaIscrizioni,
                               dimensioneMaxTeam,
                               montepremi,
+                              organizzatoreCorrente,
                               giudice,
                               mentori);
     }

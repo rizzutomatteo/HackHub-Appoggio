@@ -23,6 +23,7 @@ public class ServiceHackathon {
                                  LocalDate scadenzaIscrizioni,
                                  int dimensioneMaxTeam,
                                  long montepremi,
+                                 Utente organizzatore,
                                  Utente giudice,
                                  List<Utente> mentori) {
         if (nome == null || nome.isEmpty()) {
@@ -35,6 +36,9 @@ public class ServiceHackathon {
             return false;
         }
         if (dimensioneMaxTeam <= 0) {
+            return false;
+        }
+        if (organizzatore == null) {
             return false;
         }
         if (giudice == null) {
@@ -52,7 +56,7 @@ public class ServiceHackathon {
                                     scadenzaIscrizioni,
                                     dimensioneMaxTeam,
                                     montepremi);
-        h.assegnaStaff(null, giudice, mentori);
+        h.assegnaStaff(organizzatore, giudice, mentori);
         repoHackathon.salva(h);
         return true;
     }
