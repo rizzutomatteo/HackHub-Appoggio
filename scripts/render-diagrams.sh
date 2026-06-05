@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Rende tutti i diagrammi PlantUML (.puml) di iterazione1/ in PNG + SVG usando il
-# container ufficiale plantuml/plantuml (Java 17 + ELK + Graphviz gia' dentro).
+# Rende tutti i diagrammi PlantUML (.puml) di tutte le iterazioni (iterazione*/) in PNG + SVG
+# usando il container ufficiale plantuml/plantuml (Java 17 + ELK + Graphviz gia' dentro).
 #
 # Requisito: SOLO Docker. Non serve installare Java/Graphviz/ELK in locale.
 # (Necessario perche' il layout ELK e' compilato per Java 17: i renderer locali
@@ -14,9 +14,10 @@ cd "$(dirname "$0")/.."
 
 IMG="plantuml/plantuml"
 
-mapfile -t PUML < <(find iterazione1 -name '*.puml' | sort)
+# Tutte le iterazioni (iterazione1, iterazione2, ...): il glob si espande dalla root del repo.
+mapfile -t PUML < <(find iterazione* -name '*.puml' | sort)
 if [ "${#PUML[@]}" -eq 0 ]; then
-  echo "Nessun file .puml trovato in iterazione1/."
+  echo "Nessun file .puml trovato nelle cartelle iterazione*/."
   exit 0
 fi
 
