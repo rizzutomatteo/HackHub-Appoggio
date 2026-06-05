@@ -1,0 +1,129 @@
+@startuml CLASSI_ANALISI_CHANGE
+' CLASSI DI ANALISI - 2a iterazione HackHub.
+' Estende il modello di analisi della 1a iterazione (iterazione1/analisi/CLASSI_ANALISI_REALIZZATI.puml)
+' con i SOLI concetti di dominio introdotti dai casi d'uso UC06-UC10:
+'   - "vincitore": associazione Hackathon -> Team (UC08 Proclama Vincitore).
+'   - "Invito": entità (collega utente invitato e Team) + enum StatoInvito (UC09 Invita Membro / UC10 Accetta Invito).
+' Invito e' modellato come ENTITA' e non come classe-associazione Utente-Team: ha identita' e
+' ciclo di vita propri (Pendente/Accettato/Rifiutato), puo' avere storia per coppia, ed evita la
+' seconda classe-associazione sulla coppia Utente-Team (che renderebbe il layout illeggibile).
+' NON compaiono artefatti di soluzione (transizioni del pattern State, ServizioNotifiche/Observer,
+' aggiungiMembro): sono progettazione, non dominio del problema.
+' Stile domain model: niente operazioni, tipi/visibilita' omessi (UML_03 slide 13);
+' relazioni reificate come classi-associazione (UML_04 slide 10).
+' Layout ELK: niente incroci, linee dritte/ortogonali (richiede Java 17: render via Docker).
+' Coerente con iterazione2/useCase/CASI_USO_DETTAGLIATI.md.
+hide empty members
+hide circle
+!pragma layout elk
+
+enum Stato {
+  InIscrizione
+  InCorso
+  InValutazione
+  Concluso
+}
+
+enum RuoloStaff {
+  Organizzatore
+  Giudice
+  Mentore
+}
+
+enum StatoInvito {
+  Pendente
+  Accettato
+  Rifiutato
+}
+
+class Utente <<entità>> {
+  nome
+  email
+}
+
+class Hackathon <<entità>> {
+  nome
+  regolamento
+  scadenzaIscrizioni
+  dataInizio
+  dataFine
+  luogo
+  montepremi
+  dimensioneMaxTeam
+  stato : Stato
+}
+
+class Team <<entità>> {
+  nome
+}
+
+class Incarico <<entità>> {
+  ruolo : RuoloStaff
+}
+
+class Appartenenza <<entità>> {
+  amministratore
+}
+
+class Iscrizione <<entità>> {
+  dataIscrizione
+}
+
+class Invito <<entità>> {
+  dataInvito
+  stato : StatoInvito
+}
+
+class Sottomissione <<entità>> {
+  titolo
+  contenuto
+  dataOra
+}
+
+class Valutazione <<entità>> {
+  giudizio
+  punteggio
+}
+
+' ===== Triangolo Utente-Team-Hackathon con classi-associazione =====
+Utente "1..*" -- "0..*" Hackathon
+(Utente, Hackathon) .. Incarico
+Utente "1..*" -- "0..1" Team
+(Utente, Team) .. Appartenenza
+Team "0..*" -- "0..*" Hackathon
+(Team, Hackathon) .. Iscrizione
+
+' ===== Inviti al team (UC09/UC10): Invito collega l'utente invitato e il Team =====
+Invito "0..*" -- "1" Utente : invitato >
+Invito "0..*" -- "1" Team : verso >
+
+' ===== Catena del valore =====
+Iscrizione "1" -- "0..1" Sottomissione : contiene >
+Sottomissione "1" -- "0..1" Valutazione : riceve >
+Utente "1" -- "0..*" Valutazione : redige >
+
+' ===== Vincitore dell'hackathon (UC08) =====
+Hackathon "0..*" -- "0..1" Team : vincitore >
+
+' ===== Tipi enumerati =====
+Hackathon ..> Stato
+Incarico ..> RuoloStaff
+Invito ..> StatoInvito
+
+legend right
+  Classi di analisi (dominio di business), stereotipo «entità»; stile domain model (niente operazioni).
+  Estensione 2a iterazione: associazione **vincitore** (UC08) ed entità **Invito** (UC09/UC10).
+  --
+  Iscrizione, Incarico, Appartenenza: classi-associazione (al più un legame per coppia).
+  Incarico: per ogni Hackathon 1 Organizzatore, 1 Giudice, 1..* Mentori.
+  Appartenenza: almeno una per Team ha amministratore = vero
+    (più amministratori possibili; ognuno è comunque un membro).
+  Invito: entità che collega l'utente invitato e il Team; stato in {Pendente, Accettato, Rifiutato};
+    al più un invito pendente per coppia (Utente, Team); crea l'invito solo un amministratore del Team;
+    l'accettazione genera un'Appartenenza (membro non amministratore) e vale "un utente, un solo team".
+  Vincitore: 0..1 per Hackathon; è uno dei Team iscritti (Iscrizione); proclamato a valutazioni complete.
+  Valutazione: punteggio in 0..10; il giudice coincide con il Giudice (Incarico)
+    dell'Hackathon della relativa Iscrizione.
+endlegend
+
+@enduml
