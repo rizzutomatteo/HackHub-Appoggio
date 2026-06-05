@@ -1,0 +1,77 @@
+@startuml SEQ_AccettaInvito
+' Diagramma di sequenza — realizzazione di UC10 Accetta Invito (2a iterazione HackHub). Bozza (CHANGE).
+' Information Expert: invariante "un utente, un solo team" verificato all'accettazione (chiude la TOCTOU).
+' Creator: il Team crea l'Appartenenza (membro non amministratore). Pure Fabrication: Repo*.
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Accetta Invito (UC10)
+
+actor "Utente" as Ut
+boundary "PaginaAccettaInvito" as B
+control "GestoreInviti" as GI
+participant "RepoInvito" as RInv <<pure fabrication>>
+participant "RepoUtente" as RU <<pure fabrication>>
+entity "inv : Invito" as Inv
+entity "t : Team" as T
+participant "RepoTeam" as RT <<pure fabrication>>
+
+Ut -> B : accettaInvito(invito)
+activate B
+B -> GI : accetta(invito)
+activate GI
+GI -> Inv : stato()
+activate Inv
+Inv --> GI : stato
+deactivate Inv
+
+alt invito non piu' valido - gia' accettato/rifiutato o team disciolto (UC10 3a)
+    GI --> B : invito non disponibile
+    B --> Ut : invito non piu' disponibile
+else invito pendente
+    GI -> RU : appartieneAdUnTeam(utente)
+    RU --> GI : esito
+    alt l'utente appartiene gia' a un team (UC10 4a)
+        GI --> B : invariante violata
+        B --> Ut : appartieni gia' a un team (un solo team)
+    else utente senza team
+        GI -> T : dimensioneCompatibile()
+        activate T
+        T --> GI : esito
+        deactivate T
+        alt aggiunta oltre la dimensione massima (UC10 5a)
+            GI --> B : limite superato
+            B --> Ut : aggiunta non possibile: dimensione massima del team
+        else dimensione compatibile
+            GI -> T : aggiungiMembro(utente)
+            activate T
+            create entity "app : Appartenenza" as App
+            T -> App : <<crea>>(utente, amministratore = falso)
+            T --> GI : app
+            deactivate T
+            GI -> RT : salva(t)
+            GI -> Inv : accetta()
+            GI -> RInv : salva(inv)
+            GI --> B : esito positivo
+            B --> Ut : adesione confermata (sei membro del team)
+        end
+    end
+end
+deactivate GI
+deactivate B
+
+note over GI, RU
+  "Un utente, un solo team" verificato all'accettazione (momento vincolante,
+  chiude la finestra TOCTOU). Il nuovo membro non e' amministratore.
+end note
+note over T
+  dimensioneCompatibile(): l'aggiunta non deve superare dimensioneMaxTeam di
+  alcun hackathon a cui il team e' iscritto (vincolo di UC03).
+  Realizzazione esatta (verifica vs "congelamento" all'iscrizione): problema aperto.
+end note
+note over Ut, B
+  Rifiutando/annullando, l'invito passa a Rifiutato; nessuna appartenenza creata (UC10 *a).
+end note
+@enduml

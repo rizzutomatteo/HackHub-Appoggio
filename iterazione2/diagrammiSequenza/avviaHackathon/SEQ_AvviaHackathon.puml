@@ -1,0 +1,69 @@
+@startuml SEQ_AvviaHackathon
+' Diagramma di sequenza — realizzazione di UC06 Avvia Hackathon (2a iterazione HackHub). Bozza (CHANGE).
+' Pattern State: la transizione InIscrizione -> InCorso e' delegata allo stato corrente
+' (solo InIscrizione.avvia() crea InCorso; da altri stati e' rifiutata per polimorfismo, Open/Closed).
+' Guardia temporale (now >= scadenzaIscrizioni): Information Expert sull'Hackathon.
+' EBC: PaginaX (boundary) = HandlerX, GestoreX (control) = ServiceX (vedi class diagram di progetto).
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Avvia Hackathon (UC06)
+
+actor "Organizzatore" as Org
+boundary "PaginaAvviaHackathon" as B
+control "GestoreHackathon" as GH
+entity "h : Hackathon" as H
+entity "s : InIscrizione" as S
+participant "RepoHackathon" as Repo <<pure fabrication>>
+
+Org -> B : avviaHackathon(hackathon)
+activate B
+B -> GH : avviaHackathon(hackathon)
+activate GH
+GH -> H : avvia()
+activate H
+H -> H : scadenzaIscrizioniRaggiunta()
+
+alt scadenza iscrizioni non ancora raggiunta (UC06 3a)
+    H --> GH : esito negativo
+    deactivate H
+    GH --> B : esito negativo
+    B --> Org : avvio rifiutato: attendere la scadenza iscrizioni
+else now >= scadenzaIscrizioni
+    H -> S : avvia()
+    activate S
+    alt stato corrente diverso da InIscrizione (UC06 3b)
+        S --> H : transizione non consentita
+        deactivate S
+        H --> GH : esito negativo
+        deactivate H
+        GH --> B : esito negativo
+        B --> Org : avvio rifiutato: stato non valido
+    else stato = InIscrizione
+        create entity "inCorso : InCorso" as S2
+        S -> S2 : <<crea>>
+        S --> H : inCorso
+        deactivate S
+        H -> H : stato = inCorso
+        H --> GH : esito positivo
+        deactivate H
+        GH -> Repo : salva(h)
+        GH --> B : esito positivo
+        B --> Org : avvio confermato (iscrizioni chiuse, sottomissioni aperte)
+    end
+end
+deactivate GH
+deactivate B
+
+note over H, S
+  Pattern State: la transizione e' delegata allo stato corrente.
+  InIscrizione.avvia() crea e restituisce InCorso; da altri stati
+  avvia() e' rifiutata (polimorfismo). Il Context (Hackathon) aggiorna
+  il riferimento "stato".
+end note
+note over Org, B
+  In qualunque momento l'Organizzatore puo' annullare: nessuna transizione.
+end note
+@enduml
