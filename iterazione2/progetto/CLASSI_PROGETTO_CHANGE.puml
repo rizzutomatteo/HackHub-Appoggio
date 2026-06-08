@@ -1,0 +1,329 @@
+@startuml CLASSI_PROGETTO_CHANGE
+' DIAGRAMMA DELLE CLASSI DI PROGETTAZIONE - HackHub, 2a iterazione.
+' «traccia» il modello di analisi (iterazione2/analisi/CLASSI_ANALISI_CHANGE.puml) e lo RAFFINA
+' secondo UML_07_Progettazione:
+'   - slide 3: firme precise; slide 6: classi dal dominio della soluzione (design pattern, framework).
+'   - slide 11: navigabilita' + molteplicita' su entrambi gli estremi.
+'   - slide 14: associazione "nuda" solo per cicli; 1-1 -> composizione, M-1 -> aggregazione, 1-M -> collezione.
+'   - slide 16-17: classi-associazione REIFICATE in classi regolari con aggregazione/composizione.
+' Pattern (Design Patterns, comportamentali): State (con transizioni) + Observer (notifiche).
+' Contesto Spring Boot (Design Patterns slide 4): «RestController» (boundary) / «Service» (control) /
+'   «Repository» Spring Data (persistenza, Pure Fabrication GRASP).
+' Delta vs iter.1: reificazione classi-associazione; controller orientati alla risorsa;
+'   State con transizioni; Observer; vincitore; Invito.
+!pragma layout elk
+hide empty members
+hide circle
+
+' =========================================================
+' LAYER 1 - Boundary «RestController» (EBC boundary) - orientati alla risorsa
+' =========================================================
+class HandlerHackathon <<RestController>> {
+  + nuovoHackathon(organizzatore: Utente): void
+  + inserisceDati(nome: String, dataInizio: Date, dataFine: Date, luogo: String, regolamento: String, scadenzaIscrizioni: Date, dimensioneMaxTeam: int, montepremi: long, giudice: Utente, mentori: List<Utente>): void
+  + avvia(hackathon: Hackathon): void
+  + iniziaFaseValutazione(hackathon: Hackathon): void
+  + apriProclamazione(hackathon: Hackathon): void
+  + proclama(hackathon: Hackathon, teamVincitore: Team): void
+}
+class HandlerTeam <<RestController>> {
+  + nuovoTeam(utente: Utente): void
+  + inserisceNome(nome: String): void
+}
+class HandlerInvito <<RestController>> {
+  + invitaMembro(team: Team, utenteInvitato: Utente): void
+  + accettaInvito(invito: Invito): void
+}
+class HandlerIscrizione <<RestController>> {
+  + richiediIscrizione(team: Team, hackathon: Hackathon): void
+}
+class HandlerSottomissione <<RestController>> {
+  + apriModulo(iscrizione: Iscrizione): void
+  + caricaInvia(titolo: String, contenuto: String): void
+  + conferma(): void
+}
+class HandlerValutazione <<RestController>> {
+  + apriElenco(hackathon: Hackathon): void
+  + selezionaSottomissione(sub: Sottomissione): void
+  + valuta(giudizio: String, punteggio: int): void
+}
+
+' =========================================================
+' LAYER 2 - Control «Service» (GRASP Controller, Spring @Service)
+' =========================================================
+class ServiceHackathon <<Service>> {
+  + creaHackathon(nome: String, dataInizio: Date, dataFine: Date, luogo: String, regolamento: String, scadenzaIscrizioni: Date, dimensioneMaxTeam: int, montepremi: long, organizzatore: Utente, giudice: Utente, mentori: List<Utente>): boolean
+  + avvia(hackathon: Hackathon): boolean
+  + iniziaFaseValutazione(hackathon: Hackathon): boolean
+  + preparaProclamazione(hackathon: Hackathon): List<Sottomissione>
+  + proclamaVincitore(hackathon: Hackathon, teamVincitore: Team): boolean
+}
+class ServiceTeam <<Service>> {
+  + iniziaCreazioneTeam(utente: Utente): boolean
+  + creaTeam(nome: String): boolean
+}
+class ServiceInviti <<Service>> {
+  + invita(team: Team, utenteInvitato: Utente): boolean
+  + accetta(invito: Invito): boolean
+}
+class ServiceIscrizione <<Service>> {
+  + iscriviTeam(team: Team, hackathon: Hackathon): boolean
+}
+class ServiceSottomissione <<Service>> {
+  + sottomissioneConsentita(iscrizione: Iscrizione): boolean
+  + inviaSottomissione(iscrizione: Iscrizione, titolo: String, contenuto: String): boolean
+}
+class ServiceValutazione <<Service>> {
+  + elencoSottomissioni(hackathon: Hackathon): List<Sottomissione>
+  + valuta(sub: Sottomissione, giudizio: String, punteggio: int): boolean
+}
+
+' =========================================================
+' Pattern Observer (GoF) - interfacce
+' =========================================================
+interface Subject <<interface>> {
+  + registra(o: Observer): void
+  + rimuovi(o: Observer): void
+  + notifica(invito: Invito): void
+}
+interface Observer <<interface>> {
+  + aggiorna(invito: Invito): void
+}
+class ServizioNotifiche <<Service>> {
+  + registra(o: Observer): void
+  + rimuovi(o: Observer): void
+  + notifica(invito: Invito): void
+}
+
+' =========================================================
+' LAYER 3 - Domain Entities «Entity»
+' =========================================================
+class Utente <<Entity>> {
+  - nome: String
+  - email: String
+  + aggiorna(invito: Invito): void
+}
+class Hackathon <<Entity>> {
+  - nome: String
+  - regolamento: String
+  - scadenzaIscrizioni: Date
+  - dataInizio: Date
+  - dataFine: Date
+  - luogo: String
+  - montepremi: long
+  - dimensioneMaxTeam: int
+  + assegnaStaff(organizzatore: Utente, giudice: Utente, mentori: List<Utente>): void
+  + iscrivibile(team: Team): boolean
+  - verificaDimensione(team: Team): boolean
+  - scadenzaIscrizioniRaggiunta(): boolean
+  - dataFineRaggiunta(): boolean
+  + iscrizioneConsentita(): boolean
+  + sottomissioneConsentita(): boolean
+  + valutazioneConsentita(): boolean
+  + creaIscrizione(team: Team): Iscrizione
+  + avvia(): boolean
+  + iniziaFaseValutazione(): boolean
+  + proclamaVincitore(teamVincitore: Team): boolean
+}
+class Team <<Entity>> {
+  - nome: String
+  + numeroMembri(): int
+  + aggiungiMembro(utente: Utente): Appartenenza
+  + dimensioneCompatibile(): boolean
+}
+class Incarico <<Entity>> {
+  - ruolo: RuoloStaff
+}
+class Appartenenza <<Entity>> {
+  - amministratore: boolean
+}
+class Iscrizione <<Entity>> {
+  - dataIscrizione: Date
+  + creaSottomissione(titolo: String, contenuto: String): Sottomissione
+}
+class Invito <<Entity>> {
+  - dataInvito: Date
+  - stato: StatoInvito
+  + accetta(): void
+  + rifiuta(): void
+}
+class Sottomissione <<Entity>> {
+  - titolo: String
+  - contenuto: String
+  - dataOra: DateTime
+  + registraValutazione(giudizio: String, punteggio: int, giudice: Utente): Valutazione
+}
+class Valutazione <<Entity>> {
+  - giudizio: String
+  - punteggio: int
+}
+
+' =========================================================
+' Pattern State (GoF) - Stato astratto (guardie + transizioni) + 4 concreti
+' Hackathon e' il Context; delega per polimorfismo (SRP + Open/Closed - SOLID).
+' =========================================================
+abstract class Stato {
+  + iscrizioneConsentita(): boolean
+  + sottomissioneConsentita(): boolean
+  + valutazioneConsentita(): boolean
+  + avvia(): Stato
+  + iniziaValutazione(): Stato
+  + concludi(): Stato
+}
+class InIscrizione {
+}
+class InCorso {
+}
+class InValutazione {
+}
+class Concluso {
+}
+
+' =========================================================
+' Enum
+' =========================================================
+enum RuoloStaff {
+  Organizzatore
+  Giudice
+  Mentore
+}
+enum StatoInvito {
+  Pendente
+  Accettato
+  Rifiutato
+}
+
+' =========================================================
+' LAYER 4 - Repository «Repository» (Spring Data, Pure Fabrication)
+' Solo i Service vi accedono; le entita' non conoscono la persistenza.
+' =========================================================
+interface RepoUtente <<Repository>> {
+  + appartieneAdUnTeam(u: Utente): boolean
+}
+interface RepoHackathon <<Repository>> {
+  + salva(h: Hackathon): void
+}
+interface RepoTeam <<Repository>> {
+  + esisteNome(nome: String): boolean
+  + salva(t: Team): void
+}
+interface RepoIscrizione <<Repository>> {
+  + esisteIscrizione(team: Team, hackathon: Hackathon): boolean
+  + salva(i: Iscrizione): void
+}
+interface RepoInvito <<Repository>> {
+  + esisteInvitoPendente(team: Team, u: Utente): boolean
+  + salva(inv: Invito): void
+}
+interface RepoSottomissione <<Repository>> {
+  + salva(sub: Sottomissione): void
+  + sottomissioniDi(h: Hackathon): List<Sottomissione>
+}
+interface RepoValutazione <<Repository>> {
+  + salva(v: Valutazione): void
+}
+
+' =========================================================
+' RELAZIONI
+' =========================================================
+
+' --- Pattern State: generalizzazione + Context (assoc. navigabile) ---
+Stato <|-- InIscrizione
+Stato <|-- InCorso
+Stato <|-- InValutazione
+Stato <|-- Concluso
+Hackathon "1" --> "1" Stato : stato corrente
+
+' --- Pattern Observer: realizzazioni + Subject contiene Observer ---
+Subject <|.. ServizioNotifiche
+Observer <|.. Utente
+Subject o-- "0..*" Observer : osservatori
+ServizioNotifiche ..> Invito
+
+' --- Dominio: classi-associazione REIFICATE (slide 16-17): composizione lato proprietario
+'     + associazione navigabile verso l'entita' indipendente (M-1, slide 14) ---
+Hackathon "1" *-- "1..*" Incarico : staff
+Incarico "0..*" --> "1" Utente : titolare
+Team "1" *-- "1..*" Appartenenza : membri
+Appartenenza "0..*" --> "1" Utente : membro
+Hackathon "1" *-- "0..*" Iscrizione : iscrizioni
+Iscrizione "0..*" --> "1" Team : team
+
+' --- Catena del valore (composizioni; 0..1) ---
+Iscrizione "1" *-- "0..1" Sottomissione : contiene
+Sottomissione "1" *-- "0..1" Valutazione : riceve
+Valutazione "0..*" --> "1" Utente : giudice
+
+' --- Vincitore (assoc. navigabile; lecita perche' chiude il ciclo Hackathon-Team, slide 14) ---
+Hackathon "0..*" --> "0..1" Team : vincitore
+
+' --- Inviti (UC09/UC10): Invito entita', composto dal Team, navigabile verso l'invitato ---
+Team "1" *-- "0..*" Invito : inviti
+Invito "0..*" --> "1" Utente : invitato
+
+' --- Dipendenze verso enum ---
+Incarico ..> RuoloStaff
+Invito ..> StatoInvito
+
+' --- EBC: Boundary -> Control ---
+HandlerHackathon    ..> ServiceHackathon
+HandlerTeam         ..> ServiceTeam
+HandlerInvito       ..> ServiceInviti
+HandlerIscrizione   ..> ServiceIscrizione
+HandlerSottomissione ..> ServiceSottomissione
+HandlerValutazione  ..> ServiceValutazione
+
+' --- Control -> Repository (Pure Fabrication) ---
+ServiceHackathon    ..> RepoHackathon
+ServiceHackathon    ..> RepoSottomissione
+ServiceTeam         ..> RepoUtente
+ServiceTeam         ..> RepoTeam
+ServiceInviti       ..> RepoInvito
+ServiceInviti       ..> RepoUtente
+ServiceIscrizione   ..> RepoIscrizione
+ServiceSottomissione ..> RepoSottomissione
+ServiceValutazione  ..> RepoSottomissione
+ServiceValutazione  ..> RepoValutazione
+
+' --- Control -> Entity / Observer ---
+ServiceHackathon    ..> Hackathon
+ServiceTeam         ..> Team
+ServiceInviti       ..> Invito
+ServiceInviti       ..> ServizioNotifiche
+ServiceIscrizione   ..> Hackathon
+ServiceSottomissione ..> Iscrizione
+ServiceValutazione  ..> Sottomissione
+
+' =========================================================
+legend right
+  **Diagramma delle classi di PROGETTAZIONE** - HackHub (2a iterazione). «traccia» l'analisi e la raffina (UML_07).
+  --
+  **Stereotipi (Spring Boot):** «RestController» boundary REST · «Service» control (GRASP Controller) ·
+  «Entity» dominio · «Repository» persistenza Spring Data (Pure Fabrication).
+  Controller orientati alla risorsa: HandlerHackathon raggruppa Crea/Avvia/IniziaValutazione/Proclama (iter.1: un handler per UC).
+  --
+  **Raffinamenti UML_07:** classi-associazione **reificate** (slide 16-17: Incarico/Appartenenza/Iscrizione =
+  classi con composizione lato proprietario + associazione navigabile M-1); navigabilita' e molteplicita'
+  esplicite (slide 11); associazioni "nude" solo per cicli (slide 14: vincitore chiude il ciclo Hackathon-Team).
+  --
+  **Pattern State (GoF):** Stato astratto (guardie + transizioni avvia()/iniziaValutazione()/concludi() che
+  restituiscono il prossimo Stato) + InIscrizione/InCorso/InValutazione/Concluso. Hackathon (Context) delega
+  per polimorfismo (SOLID: SRP + Open/Closed).
+  **Pattern Observer (GoF):** Subject/Observer (interfacce); ServizioNotifiche = ConcreteSubject,
+  Utente = ConcreteObserver; alla creazione di un Invito (UC09) gli osservatori sono notificati.
+  --
+  **GRASP:** Controller (Service) · Creator (Hackathon->Incarico/Stato, Team->Appartenenza/Invito,
+  Iscrizione->Sottomissione, Sottomissione->Valutazione) · Information Expert (Hackathon su stato/dimensione/vincitore;
+  Valutazione su 0..10) · Pure Fabrication (Repository) · Polymorphism (State).
+  --
+  **Vincoli (non grafici):**
+  • Hackathon: esattamente 1 Organizzatore, 1 Giudice, 1..* Mentori (Incarico, ruolo).
+  • Team: almeno una Appartenenza ha amministratore = vero; un Utente in al piu' un Team (Appartenenza).
+  • Iscrizione: al piu' una per coppia (Team, Hackathon); contiene al piu' una Sottomissione (re-invio sovrascrive).
+  • Valutazione: 0 <= punteggio <= 10; giudizio non vuoto; giudice = Giudice dell'Incarico dell'Hackathon.
+  • vincitore: e' uno dei Team iscritti; proclamato a valutazioni complete.
+  • Invito: al piu' un invito pendente per coppia (Utente, Team); accettazione -> Appartenenza non admin + invariante un-solo-team.
+  • Transizioni di stato esplicite (UC06/07/08), con guardia temporale; rimosso lo stub auto-by-date di iter.1.
+endlegend
+
+@enduml
