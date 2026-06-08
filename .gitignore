@@ -9,3 +9,9 @@ progetto.MD
 # File temporanei e di backup di Visual Paradigm (non versionare)
 *.lck
 *.vpp.bak*
+
+# Config IDE JetBrains / VS Code e cruft OS (locale, non versionare)
+.idea/
+*.iml
+.vscode/
+.DS_Store
