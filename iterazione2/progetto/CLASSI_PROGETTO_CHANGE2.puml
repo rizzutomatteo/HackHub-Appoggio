@@ -1,0 +1,334 @@
+@startuml CLASSI_PROGETTO_CHANGE2
+' DIAGRAMMA CLASSI DI PROGETTAZIONE - HackHub, 2a iterazione — SECONDO TENTATIVO.
+' Obiettivo: COERENZA con iterazione1/progetto/CLASSI_PROGETTO_REALIZZATI.jpg (Visual Paradigm).
+' Mantengo le convenzioni reali di iter-1:
+'   - stereotipi: «Handler» / «service» / «Entity» / «Repository» / «enumeration»;
+'   - classi-associazione MANTENUTE (Incarico/Appartenenza/Iscrizione) — NON reificate;
+'   - attributo "stato : Stato" su Hackathon mantenuto + associazione "stato corrente";
+'   - naming control MISTO come iter-1 (Gestore* per Team/Hackathon, Service* per gli altri);
+'   - handler per-UC; dipendenze etichettate «use»; value chain contiene/riceve/redige.
+' Delta 2a iterazione (innestati nello stesso stile):
+'   - State: transizioni avvia()/iniziaValutazione()/concludi();
+'   - Hackathon: avvia()/iniziaFaseValutazione()/proclamaVincitore() + associazione "vincitore";
+'   - Invito (Entity) + enum StatoInvito; Team.aggiungiMembro(); Observer (Subject/Observer/ServizioNotifiche);
+'   - nuovi Handler (Avvia/IniziaFaseValutazione/Proclama/InvitaMembro/AccettaInvito), GestoreInvito, RepoInvito.
+' NB: la DISPOSIZIONE finale va rifinita in Visual Paradigm (ELK non riproduce le posizioni esatte);
+'     qui le convenzioni e i nomi sono allineati a iter-1.
+!pragma layout elk
+hide empty members
+hide circle
+
+' =========================================================
+' Boundary «Handler» (per-UC, come iter-1)
+' =========================================================
+class HandlerCreaTeam <<Handler>> {
+  + nuovoTeam() : void
+  + inserisceNome(nome : string) : void
+}
+class HandlerCreaHackathon <<Handler>> {
+  + nuovoHackathon() : void
+  + inserisceDati(nome : string, dataInizio : Date, dataFine : Date, luogo : string, regolamento : string, scadenzaIscrizioni : Date, dimensioneMaxTeam : int, montepremi : long, giudice : Utente, mentori : List<Utente>) : void
+}
+class HandlerAvviaHackathon <<Handler>> {
+  + avviaHackathon(hackathon : Hackathon) : void
+}
+class HandlerIniziaFaseValutazione <<Handler>> {
+  + iniziaFaseValutazione(hackathon : Hackathon) : void
+}
+class HandlerProclamaVincitore <<Handler>> {
+  + apriProclamazione(hackathon : Hackathon) : void
+  + proclama(hackathon : Hackathon, teamVincitore : Team) : void
+}
+class HandlerIscrizione <<Handler>> {
+  + richiediIscrizione(team : Team, hackathon : Hackathon) : void
+}
+class HandlerSottomissione <<Handler>> {
+  + apriModulo(iscrizione : Iscrizione) : void
+  + caricaInvia(titolo : string, contenuto : string) : void
+  + conferma() : void
+  + annulla() : void
+}
+class HandlerValutazione <<Handler>> {
+  + apriElenco(hackathon : Hackathon) : void
+  + selezionaSottomissione(sub : Sottomissione) : void
+  + valuta(giudizio : string, punteggio : int) : void
+}
+class HandlerInvitaMembro <<Handler>> {
+  + invitaMembro(team : Team, utenteInvitato : Utente) : void
+}
+class HandlerAccettaInvito <<Handler>> {
+  + accettaInvito(invito : Invito) : void
+}
+
+' =========================================================
+' Control «service» (naming misto come iter-1)
+' =========================================================
+class GestoreTeam <<service>> {
+  + iniziaCreazioneTeam(utente : Utente) : boolean
+  + creaTeam(nome : string) : boolean
+}
+class GestoreHackathon <<service>> {
+  + creaHackathon(nome : string, dataInizio : Date, dataFine : Date, luogo : string, regolamento : string, scadenzaIscrizioni : Date, dimensioneMaxTeam : int, montepremi : long, giudice : Utente, mentori : List<Utente>) : void
+  + avvia(hackathon : Hackathon) : boolean
+  + iniziaFaseValutazione(hackathon : Hackathon) : boolean
+  + preparaProclamazione(hackathon : Hackathon) : List<Sottomissione>
+  + proclamaVincitore(hackathon : Hackathon, teamVincitore : Team) : boolean
+}
+class ServiceIscrizione <<service>> {
+  + iscriviTeam(team : Team, hackathon : Hackathon) : boolean
+}
+class ServiceSottomissione <<service>> {
+  + sottomissioneConsentita(iscrizione : Iscrizione) : boolean
+  + inviaSottomissione(iscrizione : Iscrizione, titolo : string, contenuto : string) : boolean
+}
+class ServiceValutazione <<service>> {
+  + elencoSottomissioni(hackathon : Hackathon) : List<Sottomissione>
+  + dettagli(sub : Sottomissione) : Sottomissione
+  + valuta(sub : Sottomissione, giudizio : string, punteggio : int) : boolean
+}
+class GestoreInvito <<service>> {
+  + invita(team : Team, utenteInvitato : Utente) : boolean
+  + accetta(invito : Invito) : boolean
+}
+class ServizioNotifiche <<service>> {
+  + registra(o : Observer) : void
+  + rimuovi(o : Observer) : void
+  + notifica(invito : Invito) : void
+}
+
+' =========================================================
+' Pattern Observer (interfacce) — delta iter-2
+' =========================================================
+interface Subject <<interface>> {
+  + registra(o : Observer) : void
+  + rimuovi(o : Observer) : void
+  + notifica(invito : Invito) : void
+}
+interface Observer <<interface>> {
+  + aggiorna(invito : Invito) : void
+}
+
+' =========================================================
+' Entity «Entity»
+' =========================================================
+class Utente <<Entity>> {
+  - nome : string
+  - email : string
+  + aggiorna(invito : Invito) : void
+}
+class Team <<Entity>> {
+  - nome : string
+  + numeroMembri() : int
+  + aggiungiMembro(utente : Utente) : Appartenenza
+}
+class Appartenenza <<Entity>> {
+  - amministratore : boolean
+}
+class Hackathon <<Entity>> {
+  - nome : string
+  - regolamento : string
+  - scadenzaIscrizioni : date
+  - dataInizio : date
+  - dataFine : date
+  - luogo : string
+  - montepremi : long
+  - dimensioneMaxTeam : int
+  - stato : Stato
+  + assegnaStaff(organizzatore : Utente, giudice : Utente, mentori : List<Utente>) : void
+  + iscrivibile(team : Team) : boolean
+  + verificaDimensione(team : Team) : boolean
+  + creaIscrizione(team : Team) : Iscrizione
+  + iscrizioneConsentita() : boolean
+  + sottomissioneConsentita() : boolean
+  + valutazioneConsentita() : boolean
+  + avvia() : boolean
+  + iniziaFaseValutazione() : boolean
+  + proclamaVincitore(teamVincitore : Team) : boolean
+}
+class Incarico <<Entity>> {
+  - ruolo : RuoloStaff
+}
+class Iscrizione <<Entity>> {
+  - dataIscrizione : date
+  + creaSottomissione(titolo : string, contenuto : string) : Sottomissione
+}
+class Invito <<Entity>> {
+  - dataInvito : date
+  - stato : StatoInvito
+  + accetta() : void
+  + rifiuta() : void
+}
+class Sottomissione <<Entity>> {
+  - titolo : string
+  - contenuto : string
+  - dataOra : dateTime
+  + registraValutazione(giudizio : string, punteggio : int, giudice : Utente) : Valutazione
+}
+class Valutazione <<Entity>> {
+  - giudizio : string
+  - punteggio : int
+}
+
+' =========================================================
+' Pattern State — guardie (iter-1) + transizioni (delta iter-2)
+' =========================================================
+abstract class Stato {
+  + iscrizioneConsentita() : boolean
+  + sottomissioneConsentita() : boolean
+  + valutazioneConsentita() : boolean
+  + avvia() : Stato
+  + iniziaValutazione() : Stato
+  + concludi() : Stato
+}
+class InIscrizione {
+}
+class InCorso {
+}
+class InValutazione {
+}
+class Concluso {
+}
+
+' =========================================================
+' Enumerazioni «enumeration»
+' =========================================================
+enum RuoloStaff <<enumeration>> {
+  Organizzatore
+  Giudice
+  Mentore
+}
+enum StatoInvito <<enumeration>> {
+  Pendente
+  Accettato
+  Rifiutato
+}
+
+' =========================================================
+' Repository «Repository»
+' =========================================================
+class RepoTeam <<Repository>> {
+  + esisteNome(nome : string) : boolean
+  + salva(t : Team) : void
+}
+class RepoUtente <<Repository>> {
+  + appartieneAdUnTeam(u : Utente) : boolean
+}
+class RepoHackathon <<Repository>> {
+  + salva(h : Hackathon) : void
+}
+class RepoIscrizione <<Repository>> {
+  + esisteIscrizione(team : Team, hackathon : Hackathon) : boolean
+  + salva(i : Iscrizione) : void
+}
+class RepoSottomissione <<Repository>> {
+  + salva(sub : Sottomissione) : void
+  + sottomissioniDi(h : Hackathon) : List<Sottomissione>
+}
+class RepoValutazione <<Repository>> {
+  + salva(v : Valutazione) : void
+}
+class RepoInvito <<Repository>> {
+  + esisteInvitoPendente(team : Team, u : Utente) : boolean
+  + salva(inv : Invito) : void
+}
+
+' =========================================================
+' RELAZIONI
+' =========================================================
+
+' --- Triangolo del dominio: classi-associazione MANTENUTE (come iter-1) ---
+Utente "1..*" -- "0..*" Hackathon : incarico
+(Utente, Hackathon) .. Incarico
+Utente "1..*" -- "0..1" Team : appartenenza
+(Utente, Team) .. Appartenenza
+Team "0..*" -- "0..*" Hackathon : iscrizione
+(Team, Hackathon) .. Iscrizione
+
+' --- Catena del valore ---
+Iscrizione "1" -- "0..1" Sottomissione : contiene
+Sottomissione "1" -- "0..1" Valutazione : riceve
+Utente "1" -- "0..*" Valutazione : redige
+
+' --- State: Context + generalizzazione ---
+Hackathon "0..*" --> "1" Stato : stato corrente
+Stato <|-- InIscrizione
+Stato <|-- InCorso
+Stato <|-- InValutazione
+Stato <|-- Concluso
+
+' --- Vincitore (delta iter-2) ---
+Hackathon "0..*" --> "0..1" Team : vincitore
+
+' --- Inviti (delta iter-2): Invito entita' ---
+Team "1" -- "0..*" Invito : inviti
+Invito "0..*" --> "1" Utente : invitato
+
+' --- Observer (delta iter-2) ---
+Subject <|.. ServizioNotifiche
+Observer <|.. Utente
+Subject o-- "0..*" Observer : osservatori
+
+' --- Dipendenze verso le enum ---
+Incarico ..> RuoloStaff : <<use>>
+Invito ..> StatoInvito : <<use>>
+
+' --- EBC: Handler ..> service («use») ---
+HandlerCreaTeam ..> GestoreTeam : <<use>>
+HandlerCreaHackathon ..> GestoreHackathon : <<use>>
+HandlerAvviaHackathon ..> GestoreHackathon : <<use>>
+HandlerIniziaFaseValutazione ..> GestoreHackathon : <<use>>
+HandlerProclamaVincitore ..> GestoreHackathon : <<use>>
+HandlerIscrizione ..> ServiceIscrizione : <<use>>
+HandlerSottomissione ..> ServiceSottomissione : <<use>>
+HandlerValutazione ..> ServiceValutazione : <<use>>
+HandlerInvitaMembro ..> GestoreInvito : <<use>>
+HandlerAccettaInvito ..> GestoreInvito : <<use>>
+
+' --- service ..> Repository («use») ---
+GestoreTeam ..> RepoTeam : <<use>>
+GestoreTeam ..> RepoUtente : <<use>>
+GestoreHackathon ..> RepoHackathon : <<use>>
+GestoreHackathon ..> RepoSottomissione : <<use>>
+ServiceIscrizione ..> RepoIscrizione : <<use>>
+ServiceSottomissione ..> RepoSottomissione : <<use>>
+ServiceValutazione ..> RepoSottomissione : <<use>>
+ServiceValutazione ..> RepoValutazione : <<use>>
+GestoreInvito ..> RepoInvito : <<use>>
+GestoreInvito ..> RepoUtente : <<use>>
+GestoreInvito ..> RepoTeam : <<use>>
+
+' --- service ..> Entity / Observer («use») ---
+GestoreHackathon ..> Hackathon : <<use>>
+GestoreTeam ..> Team : <<use>>
+ServiceIscrizione ..> Hackathon : <<use>>
+ServiceSottomissione ..> Iscrizione : <<use>>
+ServiceValutazione ..> Sottomissione : <<use>>
+GestoreInvito ..> Invito : <<use>>
+GestoreInvito ..> Team : <<use>>
+GestoreInvito ..> ServizioNotifiche : <<use>>
+
+' =========================================================
+legend right
+  **Classi di PROGETTAZIONE - HackHub (2a iterazione) — versione coerente con iter-1 (VP).**
+  --
+  Stereotipi e convenzioni come iterazione1/progetto/CLASSI_PROGETTO_REALIZZATI.jpg:
+  «Handler» (boundary) · «service» (control; naming misto Gestore*/Service* di iter-1) ·
+  «Entity» (dominio) · «Repository» (persistenza) · «enumeration». Dipendenze «use».
+  Classi-associazione mantenute (Incarico/Appartenenza/Iscrizione); attributo stato : Stato mantenuto.
+  --
+  **Delta 2a iterazione:** State con transizioni (avvia/iniziaValutazione/concludi);
+  Hackathon.avvia/iniziaFaseValutazione/proclamaVincitore + associazione "vincitore";
+  entita' Invito + enum StatoInvito; Team.aggiungiMembro; Observer (Subject/Observer/ServizioNotifiche);
+  nuovi Handler (Avvia/IniziaFaseValutazione/Proclama/InvitaMembro/AccettaInvito), GestoreInvito, RepoInvito.
+  --
+  **Pattern:** State (Hackathon = Context) · Observer (ServizioNotifiche = ConcreteSubject, Utente = ConcreteObserver) ·
+  GRASP (Controller/Creator/Information Expert/Pure Fabrication/Polymorphism).
+  --
+  **Vincoli (non grafici):** 1 Organizzatore + 1 Giudice + 1..* Mentori (Incarico); un Utente in <=1 Team;
+  Iscrizione unica per (Team,Hackathon) e contiene <=1 Sottomissione; punteggio 0..10;
+  vincitore = team iscritto, a valutazioni complete; <=1 invito pendente per (Utente,Team).
+  --
+  NB: disposizione finale da rifinire in Visual Paradigm (questo .puml allinea nomi/convenzioni, non le posizioni).
+endlegend
+
+@enduml
