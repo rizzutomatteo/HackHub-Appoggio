@@ -20,6 +20,7 @@ public class Hackathon {
     private final int dimensioneMaxTeam;
     private Stato stato;
     private final List<Incarico> staff;
+    private Team vincitore;
 
     public Hackathon(String nome,
                      LocalDate dataInizio,
@@ -69,6 +70,51 @@ public class Hackathon {
         return stato.valutazioneConsentita();
     }
 
+    // Transizioni del ciclo di vita (UC06/UC07/UC08): l'Hackathon (Context del
+    // pattern State) verifica la guardia temporale e delega allo stato corrente,
+    // che crea e restituisce lo stato successivo (null = transizione non consentita).
+    public boolean avvia() {
+        if (!scadenzaIscrizioniRaggiunta()) {
+            return false;
+        }
+        Stato successivo = stato.avvia();
+        if (successivo == null) {
+            return false;
+        }
+        this.stato = successivo;
+        return true;
+    }
+
+    public boolean iniziaFaseValutazione() {
+        if (!dataFineRaggiunta()) {
+            return false;
+        }
+        Stato successivo = stato.iniziaValutazione();
+        if (successivo == null) {
+            return false;
+        }
+        this.stato = successivo;
+        return true;
+    }
+
+    public boolean proclamaVincitore(Team teamVincitore) {
+        Stato successivo = stato.concludi();
+        if (successivo == null) {
+            return false;
+        }
+        this.vincitore = teamVincitore;
+        this.stato = successivo;
+        return true;
+    }
+
+    private boolean scadenzaIscrizioniRaggiunta() {
+        return !LocalDate.now().isBefore(scadenzaIscrizioni);
+    }
+
+    private boolean dataFineRaggiunta() {
+        return !LocalDate.now().isBefore(dataFine);
+    }
+
     public Iscrizione creaIscrizione(Team team) {
         return new Iscrizione(team, this, LocalDate.now());
     }
@@ -107,6 +153,10 @@ public class Hackathon {
 
     public Stato getStato() {
         return stato;
+    }
+
+    public Team getVincitore() {
+        return vincitore;
     }
 
     public List<Incarico> getStaff() {

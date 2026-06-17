@@ -16,4 +16,9 @@ public class InIscrizione extends Stato {
     public boolean valutazioneConsentita() {
         return false;
     }
+
+    @Override
+    public Stato avvia() {
+        return new InCorso();
+    }
 }

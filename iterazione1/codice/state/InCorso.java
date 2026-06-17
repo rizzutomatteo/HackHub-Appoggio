@@ -16,4 +16,9 @@ public class InCorso extends Stato {
     public boolean valutazioneConsentita() {
         return false;
     }
+
+    @Override
+    public Stato iniziaValutazione() {
+        return new InValutazione();
+    }
 }

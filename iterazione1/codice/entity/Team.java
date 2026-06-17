@@ -26,4 +26,14 @@ public class Team {
     public int numeroMembri() {
         return membri.size();
     }
+
+    public Appartenenza aggiungiMembro(Utente utente) {
+        Appartenenza appartenenza = new Appartenenza(utente, this, false);
+        membri.add(appartenenza);
+        return appartenenza;
+    }
+
+    public boolean dimensioneCompatibile(int dimensioneMax) {
+        return numeroMembri() + 1 <= dimensioneMax;
+    }
 }
