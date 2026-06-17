@@ -39,6 +39,8 @@ Riferimento autorevole: **`iterazione1/progetto/CLASSI_PROGETTO_REALIZZATI.jpg`*
 - **`<<Entity>>`** — classe di dominio.
 - **`<<Repository>>`** — persistenza (Spring Data, Pure Fabrication).
 - **`<<enumeration>>`** — enum. **`<<interface>>`** — interfacce (es. pattern Observer).
+- **`<<adapter>>`** — adapter concreto del pattern **Adapter** (iter. 3): gateway verso un sistema esterno (es. `AdapterCalendar`). Realizza la porta «interface» (es. `CalendarGateway`).
+- **`<<sistema esterno>>`** — sistema/servizio esterno (Adaptee del pattern Adapter), es. `Calendar`. Raggiunto **solo** tramite l'adapter; i `service` dipendono dalla porta, mai dall'API esterna.
 
 ### 2.2 Visibilità, tipi, firme (UML_07 slide 3)
 
