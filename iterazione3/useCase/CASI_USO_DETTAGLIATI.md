@@ -102,7 +102,7 @@ Dopo iter. 1 (scheletro del valore) e iter. 2 (ciclo di vita + team reali con St
 | **Attori di supporto** | nessuno           |
 | **Rank / Complessità** | Media / Bassa     |
 
-**Breve descrizione.** Un Membro del team invia una **richiesta di supporto** ai Mentori dell'hackathon a cui il suo team è iscritto. Apre la catena del mentoring; i Mentori dell'hackathon vengono notificati (Observer).
+**Breve descrizione.** Un Membro del team invia una **richiesta di supporto** ai Mentori dell'hackathon a cui il suo team è iscritto. Apre una nuova richiesta di supporto; i Mentori dell'hackathon vengono notificati (Observer).
 
 **Evento scatenante.** Il team ha bisogno di aiuto durante lo svolgimento dell'hackathon.
 
