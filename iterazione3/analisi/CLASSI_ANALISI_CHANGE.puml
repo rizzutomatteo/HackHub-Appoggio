@@ -1,0 +1,185 @@
+@startuml CLASSI_ANALISI_CHANGE
+' CLASSI DI ANALISI - 3a iterazione HackHub.
+' Estende il modello di analisi della 2a iterazione (iterazione2/analisi/CLASSI_ANALISI_CHANGE.puml)
+' con i SOLI concetti di dominio introdotti dai casi d'uso UC11-UC15 (catena del mentoring):
+'   - "RichiestaSupporto": entita' (un Membro di un Team chiede supporto in un Hackathon) + enum StatoRichiesta (UC11/UC12).
+'   - "PropostaCall": entita' (un Mentore propone una call a un Team) + enum StatoCall (UC13/UC14/UC15).
+'
+' RAZIONALE (ancorato ai materiali del corso):
+'  - RichiestaSupporto e PropostaCall sono ENTITA' di dominio (categorie "Transactions/Events/Records",
+'    UML_03 slide 19; "nel dubbio e' una classe", UML_03 slide 18); hanno identita', attributi e ciclo di
+'    vita propri. Lo stato e' un enum semplice (decisione D2: NON pattern State, che resta sul solo Hackathon).
+'  - Stile domain model: niente operazioni, niente visibilita', tipi omessi (UML_03 slide 13). Si mostra solo
+'    il tipo enum degli attributi di stato (es. stato : StatoRichiesta) come gia' fatto in iter. 1/2.
+'  - NON compaiono artefatti di soluzione: il sistema esterno Calendar, l'Adapter CalendarGateway e
+'    l'Observer (Subject/Observer/ServizioNotifiche) sono DOMINIO DELLA SOLUZIONE (Design Patterns/framework:
+'    UML_07 slide 6) e vanno nel diagramma di PROGETTAZIONE, non in analisi (UML_03 slide 11: "NO a classi
+'    del dominio tecnologico della soluzione"). Coerente con l'esclusione di Observer gia' fatta in iter. 2.
+'  - Il legame con Calendar e' reso dal solo attributo riferimentoPrenotazione: la classe destinazione
+'    (Calendar) non e' parte del modello, quindi e' piu' chiaro un attributo (UML_04 slide 9).
+'  - Relazioni di analisi: associazioni con nome/ruolo "da leggere" (UML_04 slide 6) e molteplicita' su
+'    entrambi gli estremi (UML_04 slide 7); classi-associazione per le relazioni reificate (UML_04 slide 10).
+'    La navigabilita' e il raffinamento in aggregazione/composizione sono attivita' di progetto (UML_07 slide 10-11).
+' Layout ELK: niente incroci, linee dritte/ortogonali (richiede Java 17: render via Docker).
+' Coerente con iterazione3/useCase/CASI_USO_DETTAGLIATI.md.
+hide empty members
+hide circle
+!pragma layout elk
+
+enum Stato {
+  InIscrizione
+  InCorso
+  InValutazione
+  Concluso
+}
+
+enum RuoloStaff {
+  Organizzatore
+  Giudice
+  Mentore
+}
+
+enum StatoInvito {
+  Pendente
+  Accettato
+  Rifiutato
+}
+
+enum StatoRichiesta {
+  Aperta
+  Gestita
+  Chiusa
+}
+
+enum StatoCall {
+  Proposta
+  Accettata
+  Rifiutata
+}
+
+class Utente <<entità>> {
+  nome
+  email
+}
+
+class Hackathon <<entità>> {
+  nome
+  regolamento
+  scadenzaIscrizioni
+  dataInizio
+  dataFine
+  luogo
+  montepremi
+  dimensioneMaxTeam
+  stato : Stato
+}
+
+class Team <<entità>> {
+  nome
+}
+
+class Incarico <<entità>> {
+  ruolo : RuoloStaff
+}
+
+class Appartenenza <<entità>> {
+  amministratore
+}
+
+class Iscrizione <<entità>> {
+  dataIscrizione
+}
+
+class Invito <<entità>> {
+  dataInvito
+  stato : StatoInvito
+}
+
+class Sottomissione <<entità>> {
+  titolo
+  contenuto
+  dataOra
+}
+
+class Valutazione <<entità>> {
+  giudizio
+  punteggio
+}
+
+class RichiestaSupporto <<entità>> {
+  messaggio
+  dataRichiesta
+  stato : StatoRichiesta
+}
+
+class PropostaCall <<entità>> {
+  dataOraProposta
+  riferimentoPrenotazione
+  stato : StatoCall
+}
+
+' ===== Triangolo Utente-Team-Hackathon con classi-associazione =====
+Utente "1..*" -- "0..*" Hackathon
+(Utente, Hackathon) .. Incarico
+Utente "1..*" -- "0..1" Team
+(Utente, Team) .. Appartenenza
+Team "0..*" -- "0..*" Hackathon
+(Team, Hackathon) .. Iscrizione
+
+' ===== Inviti al team (UC09/UC10): Invito collega l'utente invitato e il Team =====
+Invito "0..*" -- "1" Utente : invitato >
+Invito "0..*" -- "1" Team : verso >
+
+' ===== Catena del valore =====
+Iscrizione "1" -- "0..1" Sottomissione : contiene >
+Sottomissione "1" -- "0..1" Valutazione : riceve >
+Utente "1" -- "0..*" Valutazione : redige >
+
+' ===== Vincitore dell'hackathon (UC08) =====
+Hackathon "0..*" -- "0..1" Team : vincitore >
+
+' ===== Mentoring 3a iterazione (UC11-UC15) =====
+' RichiestaSupporto: un Team chiede supporto nel contesto di un Hackathon (UC11/UC12).
+RichiestaSupporto "0..*" -- "1" Team : richiedente >
+RichiestaSupporto "0..*" -- "1" Hackathon : contesto >
+' PropostaCall: un Mentore (Utente) propone una call a un Team, in risposta a una richiesta (UC13-UC15).
+PropostaCall "0..*" -- "1" Team : destinatario >
+PropostaCall "0..*" -- "1" Utente : proponente >
+PropostaCall "0..*" -- "0..1" RichiestaSupporto : in risposta a >
+
+' ===== Tipi enumerati (dipendenza d'uso, UML_04 slide 12-13) =====
+Hackathon ..> Stato
+Incarico ..> RuoloStaff
+Invito ..> StatoInvito
+RichiestaSupporto ..> StatoRichiesta
+PropostaCall ..> StatoCall
+
+legend right
+  Classi di analisi (dominio di business), stereotipo «entità»; stile domain model (niente operazioni — UML_03 slide 13).
+  Estensione 3a iterazione: entità **RichiestaSupporto** (UC11/UC12) e **PropostaCall** (UC13/UC14/UC15) — catena del mentoring.
+  --
+  Iscrizione, Incarico, Appartenenza: classi-associazione (al più un legame per coppia).
+  Incarico: per ogni Hackathon 1 Organizzatore, 1 Giudice, 1..* Mentori.
+  Appartenenza: almeno una per Team ha amministratore = vero
+    (più amministratori possibili; ognuno è comunque un membro).
+  Invito: entità che collega l'utente invitato e il Team; stato in {Pendente, Accettato, Rifiutato};
+    al più un invito pendente per coppia (Utente, Team); crea l'invito solo un amministratore del Team;
+    l'accettazione genera un'Appartenenza (membro non amministratore) e vale "un utente, un solo team".
+  Vincitore: 0..1 per Hackathon; è uno dei Team iscritti (Iscrizione); proclamato a valutazioni complete.
+  Valutazione: punteggio in 0..10; il giudice coincide con il Giudice (Incarico)
+    dell'Hackathon della relativa Iscrizione.
+  --
+  RichiestaSupporto: stato in {Aperta, Gestita, Chiusa}; aperta da un Membro (Appartenenza) di un Team iscritto,
+    con Hackathon "in corso"; la coppia (Team, Hackathon) corrisponde a un'Iscrizione esistente;
+    visibile ai Mentori di quell'Hackathon (Incarico, ruolo = Mentore).
+  PropostaCall: stato in {Proposta, Accettata, Rifiutata}; il proponente è un Mentore
+    (Incarico, ruolo = Mentore) dell'Hackathon del Team destinatario; "in risposta a" 0..1 RichiestaSupporto;
+    riferimentoPrenotazione = id dello slot sul Calendar esterno (prenotazione delegata):
+    "Accettata" ⇒ slot prenotato, "Rifiutata" ⇒ nessuna prenotazione.
+  --
+  Fuori dal dominio (artefatti di soluzione → diagramma di PROGETTAZIONE, UML_07 slide 6; UML_03 slide 11):
+    Calendar (sistema esterno) e l'Adapter CalendarGateway che lo isola; l'Observer (Subject/Observer/
+    ServizioNotifiche) riusato per le notifiche del mentoring.
+endlegend
+
+@enduml
