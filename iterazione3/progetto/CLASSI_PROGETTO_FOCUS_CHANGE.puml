@@ -1,0 +1,230 @@
+@startuml CLASSI_PROGETTO_FOCUS_CHANGE
+' DIAGRAMMA CLASSI DI PROGETTAZIONE - HackHub, 3a iterazione - VISTA FOCALIZZATA (delta mentoring UC11-UC15).
+' Complementare a CLASSI_PROGETTO_CHANGE.puml (vista cumulativa iter.1+2+3): qui si mostrano in dettaglio
+' SOLO le classi NUOVE della 3a iterazione (catena del mentoring + pattern Adapter) e, come CONTESTO
+' (riquadri grigi, membri ridotti), le classi gia' esistenti che il delta tocca direttamente.
+' La definizione completa delle classi di contesto e' nel diagramma cumulativo.
+' Derivato dai diagrammi di sequenza UC11-UC15; convenzioni: CONVENZIONI_DIAGRAMMI.md.
+'   - Adapter (nuovo, strutturale): CalendarGateway (porta) <- AdapterCalendar -> Calendar (Adaptee). I service usano solo la porta.
+'   - Observer (riuso iter.2, generalizzato): payload = marker Notifica (Invito/RichiestaSupporto/PropostaCall).
+'   - State: NON coinvolto in iter.3 (gli stati di RichiestaSupporto/PropostaCall sono enum semplici - D2).
+!pragma layout elk
+hide empty members
+hide circle
+
+' =========================================================
+' NUOVE - Boundary «Handler» (per-UC)
+' =========================================================
+class HandlerRichiedeSupporto <<Handler>> {
+  + richiediSupporto(team : Team, hackathon : Hackathon) : void
+  + confermaRichiesta(messaggio : string) : void
+}
+class HandlerVisualizzaRichieste <<Handler>> {
+  + visualizzaRichieste(mentore : Utente) : void
+}
+class HandlerProponeCall <<Handler>> {
+  + proponiCall(richiesta : RichiestaSupporto) : void
+  + confermaSlot(slot : dateTime) : void
+}
+class HandlerAccettaCall <<Handler>> {
+  + accettaProposta(proposta : PropostaCall) : void
+}
+class HandlerRifiutaCall <<Handler>> {
+  + rifiutaProposta(proposta : PropostaCall) : void
+}
+
+' =========================================================
+' NUOVE - Control «service»
+' =========================================================
+class GestoreSupporto <<service>> {
+  + richiediSupporto(team : Team, hackathon : Hackathon, messaggio : string) : boolean
+  + richiesteDelMentore(mentore : Utente) : List<RichiestaSupporto>
+}
+class GestoreCall <<service>> {
+  + proponiCall(mentore : Utente, richiesta : RichiestaSupporto, slot : dateTime) : boolean
+  + accettaProposta(proposta : PropostaCall) : boolean
+  + rifiutaProposta(proposta : PropostaCall) : boolean
+  - mentoreAssegnato(mentore : Utente, richiesta : RichiestaSupporto) : boolean
+}
+
+' =========================================================
+' NUOVE - Pattern ADAPTER (isola il sistema esterno Calendar)
+' =========================================================
+interface CalendarGateway <<interface>> {
+  + riservaSlot(slot : dateTime) : string
+  + confermaPrenotazione(proposta : PropostaCall) : boolean
+}
+class AdapterCalendar <<adapter>> {
+  + riservaSlot(slot : dateTime) : string
+  + confermaPrenotazione(proposta : PropostaCall) : boolean
+}
+class Calendar <<sistema esterno>> {
+  + riserva(slot : dateTime) : string
+  + conferma(riferimentoPrenotazione : string) : boolean
+}
+
+' =========================================================
+' NUOVE - Entity «Entity» + enum di stato (NON pattern State - D2)
+' =========================================================
+class RichiestaSupporto <<Entity>> {
+  - messaggio : string
+  - dataRichiesta : date
+  - stato : StatoRichiesta
+}
+class PropostaCall <<Entity>> {
+  - dataOraProposta : dateTime
+  - riferimentoPrenotazione : string
+  - stato : StatoCall
+  + accetta() : void
+  + rifiuta() : void
+  + getStato() : StatoCall
+}
+enum StatoRichiesta <<enumeration>> {
+  Aperta
+  Gestita
+  Chiusa
+}
+enum StatoCall <<enumeration>> {
+  Proposta
+  Accettata
+  Rifiutata
+}
+
+' =========================================================
+' NUOVE - Repository «Repository»
+' =========================================================
+class RepoRichiestaSupporto <<Repository>> {
+  + esisteRichiestaAperta(team : Team, hackathon : Hackathon) : boolean
+  + trovaPerHackathonDelMentore(mentore : Utente) : List<RichiestaSupporto>
+  + salva(r : RichiestaSupporto) : void
+}
+class RepoPropostaCall <<Repository>> {
+  + propostePerTeam(team : Team) : List<PropostaCall>
+  + salva(proposta : PropostaCall) : void
+}
+
+' =========================================================
+' NUOVA - marker dell'Observer (generalizza il payload, prima era il solo Invito)
+' =========================================================
+interface Notifica <<interface>> {
+}
+
+' =========================================================
+' CONTESTO - classi esistenti toccate dal delta (membri ridotti; def. completa nel cumulativo)
+' =========================================================
+interface Subject <<interface>> #WhiteSmoke {
+  + registra(o : Observer) : void
+  + rimuovi(o : Observer) : void
+  + notifica(n : Notifica) : void
+}
+interface Observer <<interface>> #WhiteSmoke {
+  + aggiorna(n : Notifica) : void
+}
+class ServizioNotifiche <<service>> #WhiteSmoke {
+  + notifica(n : Notifica) : void
+}
+class Utente <<Entity>> #WhiteSmoke {
+  + aggiorna(n : Notifica) : void
+}
+class Team <<Entity>> #WhiteSmoke {
+}
+class Hackathon <<Entity>> #WhiteSmoke {
+  - stato : Stato
+}
+class Incarico <<Entity>> #WhiteSmoke {
+  - ruolo : RuoloStaff
+}
+class Invito <<Entity>> #WhiteSmoke {
+  - stato : StatoInvito
+}
+class RepoIscrizione <<Repository>> #WhiteSmoke {
+  + iscrizioneInCorso(team : Team, hackathon : Hackathon) : boolean
+}
+enum RuoloStaff <<enumeration>> #WhiteSmoke {
+  Organizzatore
+  Giudice
+  Mentore
+}
+
+' =========================================================
+' RELAZIONI (solo quelle che coinvolgono il delta iter.3)
+' =========================================================
+
+' --- Adapter: porta realizzata dall'adapter, che incapsula l'Adaptee esterno ---
+CalendarGateway <|.. AdapterCalendar
+AdapterCalendar --> "1" Calendar : adaptee
+
+' --- Observer (riuso): realizzazioni + Subject contiene Observer + marker Notifica ---
+Subject <|.. ServizioNotifiche
+Observer <|.. Utente
+Subject o-- "0..*" Observer : osservatori
+Notifica <|.. Invito
+Notifica <|.. RichiestaSupporto
+Notifica <|.. PropostaCall
+
+' --- Mentoring: associazioni navigabili (UC11-UC15) ---
+RichiestaSupporto "0..*" --> "1" Team : richiedente
+RichiestaSupporto "0..*" --> "1" Hackathon : contesto
+PropostaCall "0..*" --> "1" Team : destinatario
+PropostaCall "0..*" --> "1" Utente : proponente
+PropostaCall "0..*" --> "0..1" RichiestaSupporto : in risposta a
+
+' --- Dipendenze verso le enum ---
+RichiestaSupporto ..> StatoRichiesta : <<use>>
+PropostaCall ..> StatoCall : <<use>>
+Incarico ..> RuoloStaff : <<use>>
+
+' --- EBC: Handler ..> service («use») ---
+HandlerRichiedeSupporto ..> GestoreSupporto : <<use>>
+HandlerVisualizzaRichieste ..> GestoreSupporto : <<use>>
+HandlerProponeCall ..> GestoreCall : <<use>>
+HandlerAccettaCall ..> GestoreCall : <<use>>
+HandlerRifiutaCall ..> GestoreCall : <<use>>
+
+' --- service ..> Repository («use») ---
+GestoreSupporto ..> RepoRichiestaSupporto : <<use>>
+GestoreSupporto ..> RepoIscrizione : <<use>>
+GestoreCall ..> RepoPropostaCall : <<use>>
+
+' --- service ..> Entity / Observer / Adapter («use») ---
+GestoreSupporto ..> RichiestaSupporto : <<use>>
+GestoreSupporto ..> ServizioNotifiche : <<use>>
+GestoreCall ..> PropostaCall : <<use>>
+GestoreCall ..> RichiestaSupporto : <<use>>
+GestoreCall ..> Team : <<use>>
+GestoreCall ..> Hackathon : <<use>>
+GestoreCall ..> Incarico : <<use>>
+GestoreCall ..> CalendarGateway : <<use>>
+GestoreCall ..> ServizioNotifiche : <<use>>
+
+' =========================================================
+legend right
+  **Classi di PROGETTAZIONE - HackHub (3a iterazione) - VISTA FOCALIZZATA sul delta mentoring (UC11-UC15).**
+  Complementare alla vista cumulativa CLASSI_PROGETTO_CHANGE.puml. Derivata dai diagrammi di sequenza UC11-UC15.
+  --
+  **Riquadri bianchi = NUOVE (iter.3)** · **riquadri grigi = CONTESTO** (classi esistenti, membri ridotti;
+  definizione completa nel diagramma cumulativo).
+  Stereotipi: «Handler» · «service» · «Entity» · «Repository» · «enumeration» · «interface» ·
+  «adapter» (adapter concreto) · «sistema esterno» (Adaptee). Dipendenze «use»; solo i service accedono ai Repo.
+  --
+  **Pattern in evidenza nel delta:**
+  • **Adapter** (GoF strutturale, NUOVO): porta **CalendarGateway** realizzata da **AdapterCalendar** che incapsula
+    l'Adaptee **Calendar** (sistema esterno). GestoreCall dipende SOLO dalla porta (DIP); contratto sincrono
+    (riserva tentativa in UC13, conferma in UC14; UC15 non tocca Calendar).
+  • **Observer** (GoF comportamentale, RIUSO iter.2 generalizzato): Subject/Observer; ServizioNotifiche = ConcreteSubject,
+    Utente = ConcreteObserver; payload = marker **Notifica** (realizzata da Invito, RichiestaSupporto, PropostaCall)
+    -> una sola notifica()/aggiorna() per inviti + richieste + proposte.
+  • **State**: NON coinvolto in iter.3 (stati di RichiestaSupporto/PropostaCall = enum semplici, decisione D2).
+  --
+  **GRASP:** Controller (GestoreSupporto/GestoreCall) · Creator (creano RichiestaSupporto/PropostaCall) ·
+  Information Expert (scope Mentore via Incarico, ruolo = Mentore) · Pure Fabrication (Repository, CalendarGateway).
+  --
+  **Vincoli (non grafici):** Mentore agisce solo sugli hackathon assegnati (Incarico); RichiestaSupporto aperta con
+  hackathon "in corso" (iscrizioneInCorso), al piu' una "Aperta" per (Team, Hackathon); PropostaCall: proponente =
+  Mentore dell'hackathon del Team destinatario, riferimentoPrenotazione = id slot Calendar; solo l'Amministratore
+  del Team destinatario accetta/rifiuta (UC14/UC15).
+  --
+  NB: posizioni da rifinire in Visual Paradigm.
+endlegend
+
+@enduml
