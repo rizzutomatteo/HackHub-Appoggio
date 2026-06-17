@@ -1,0 +1,57 @@
+@startuml SEQ_RifiutaPropostaCall
+' Diagramma di sequenza — realizzazione di UC15 Rifiuta Proposta Call (3a iterazione HackHub). Bozza (CHANGE).
+' NESSUNA interazione con Calendar (coerente con useCase.jpg: Rifiuta Proposta Call non e' collegato a Calendar).
+' Pattern Observer (riuso iter.2): ServizioNotifiche (Subject) notifica il Mentore (Observer).
+' GRASP: Controller (GestoreCall), Information Expert (PropostaCall.stato), Pure Fabrication (RepoPropostaCall).
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Rifiuta Proposta Call (UC15)
+
+actor "Amministratore Team" as Adm
+boundary "PaginaRifiutaCall" as B
+control "GestoreCall" as GC
+entity "proposta : PropostaCall" as P
+participant "RepoPropostaCall" as RPC <<pure fabrication>>
+participant "ServizioNotifiche" as SN <<subject>>
+entity "men : Utente" as Men
+
+Adm -> B : rifiutaProposta(proposta)
+activate B
+B -> GC : rifiutaProposta(proposta)
+activate GC
+GC -> P : stato()
+activate P
+P --> GC : stato
+deactivate P
+
+alt proposta non piu' "Proposta" - gia' accettata/rifiutata/ritirata (UC15 3a)
+    GC --> B : non disponibile
+    B --> Adm : proposta non piu' disponibile
+else proposta valida
+    GC -> P : rifiuta()
+    GC -> RPC : salva(proposta)
+    GC -> SN : notifica(proposta)
+    activate SN
+    SN -> Men : aggiorna(proposta)
+    deactivate SN
+    GC --> B : esito positivo
+    B --> Adm : proposta rifiutata
+end
+deactivate GC
+deactivate B
+
+note over GC, P
+  Nessuna prenotazione su Calendar: il rifiuto cambia solo lo stato a "Rifiutata"
+  (PropostaCall.rifiuta()). Lo slot tentativo riservato in UC13 viene rilasciato/scade
+  (problema aperto §4.5). Solo l'Amministratore del Team destinatario puo' rifiutare.
+end note
+note over SN, Men
+  Pattern Observer (riuso iter.2): il Mentore proponente e' notificato del rifiuto (per riproporre).
+end note
+note over Adm, B
+  *a: in qualunque momento l'Amministratore puo' annullare: nessun cambiamento.
+end note
+@enduml

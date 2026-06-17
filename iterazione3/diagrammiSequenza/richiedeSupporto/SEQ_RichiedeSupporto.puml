@@ -1,0 +1,70 @@
+@startuml SEQ_RichiedeSupporto
+' Diagramma di sequenza — realizzazione di UC11 Richiede Supporto (3a iterazione HackHub). Bozza (CHANGE).
+' Pattern Observer (riuso iter.2): ServizioNotifiche (Subject) notifica i Mentori (Observer) dell'hackathon.
+' GRASP: Controller (GestoreSupporto), Creator (GestoreSupporto crea la RichiestaSupporto), Pure Fabrication (Repo*).
+' RichiestaSupporto.stato e' un enum semplice (Aperta/Gestita/Chiusa), NON un pattern State (lo State resta sull'Hackathon).
+' EBC: PaginaX (boundary) = HandlerX, GestoreX (control) = ServiceX (vedi class diagram di progetto).
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Richiede Supporto (UC11)
+
+actor "Membro del team" as Mem
+boundary "PaginaRichiestaSupporto" as B
+control "GestoreSupporto" as GS
+participant "RepoIscrizione" as RIscr <<pure fabrication>>
+participant "RepoRichiestaSupporto" as RRS <<pure fabrication>>
+participant "ServizioNotifiche" as SN <<subject>>
+entity "m : Utente" as M
+
+Mem -> B : richiediSupporto(team, hackathon)
+activate B
+B --> Mem : mostra modulo (messaggio)
+Mem -> B : inserisci messaggio, conferma
+B -> GS : richiediSupporto(team, hackathon, messaggio)
+activate GS
+GS -> RIscr : iscrizioneInCorso(team, hackathon)
+RIscr --> GS : esito
+
+alt team non iscritto o hackathon non "in corso" (UC11 1a)
+    GS --> B : non consentito
+    B --> Mem : richiesta non possibile + motivo
+else iscritto e hackathon in corso
+    GS -> RRS : esisteRichiestaAperta(team, hackathon)
+    RRS --> GS : esito
+    alt esiste gia' una richiesta "Aperta" del team (UC11 3a)
+        GS --> B : duplicato
+        B --> Mem : richiesta gia' aperta (si riusa quella esistente)
+    else nessuna richiesta aperta
+        create entity "r : RichiestaSupporto" as R
+        GS -> R : <<crea>>(team, hackathon, messaggio, stato = Aperta, dataRichiesta = adesso)
+        GS -> RRS : salva(r)
+        GS -> SN : notifica(r)
+        activate SN
+        loop per ogni Mentore osservatore
+            SN -> M : aggiorna(r)
+        end
+        deactivate SN
+        GS --> B : esito positivo
+        B --> Mem : richiesta inviata (Mentori avvisati)
+    end
+end
+deactivate GS
+deactivate B
+
+note over SN, M
+  Pattern Observer (riuso da iter.2): ServizioNotifiche (Subject) notifica gli Utente
+  osservatori; qui i Mentori dell'hackathon (Incarico, ruolo = Mentore) ricevono l'avviso
+  della nuova richiesta. Tutti i Mentori registrati come osservatori sono notificati.
+end note
+note over GS, RIscr
+  iscrizioneInCorso: il team e' iscritto a quell'hackathon (Iscrizione) e lo stato
+  dell'Hackathon e' InCorso (lettura del valore, NON una transizione: lo State
+  non e' coinvolto in iter.3).
+end note
+note over Mem, B
+  In qualunque momento il Membro puo' annullare: nessuna richiesta creata (UC11 *a).
+end note
+@enduml

@@ -1,0 +1,42 @@
+@startuml SEQ_VisualizzaRichiestaSupporto
+' Diagramma di sequenza — realizzazione di UC12 Visualizza Richiesta di Supporto (3a iterazione HackHub). Bozza (CHANGE).
+' Sola lettura (nessun cambiamento di stato). GRASP: Information Expert (scope via Incarico, ruolo = Mentore),
+' Controller (GestoreSupporto), Pure Fabrication (RepoRichiestaSupporto). Precede tipicamente UC13 Propone Call.
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Visualizza Richiesta di Supporto (UC12)
+
+actor "Mentore" as Men
+boundary "PaginaRichiesteSupporto" as B
+control "GestoreSupporto" as GS
+participant "RepoRichiestaSupporto" as RRS <<pure fabrication>>
+
+Men -> B : visualizzaRichieste(mentore)
+activate B
+B -> GS : richiesteDelMentore(mentore)
+activate GS
+GS -> RRS : trovaPerHackathonDelMentore(mentore)
+RRS --> GS : elenco
+GS --> B : elenco
+deactivate GS
+
+alt nessuna richiesta visibile (UC12 1a/2a)
+    B --> Men : nessuna richiesta (elenco vuoto)
+else almeno una richiesta
+    B --> Men : mostra elenco (team, hackathon, messaggio, stato)
+end
+deactivate B
+
+note over GS, RRS
+  Information Expert / scope via Incarico: il Mentore vede SOLO le richieste degli
+  hackathon a cui e' assegnato come staff (Incarico, ruolo = Mentore) — progetto.MD,
+  Membro dello Staff. Operazione di sola lettura: nessun cambiamento di stato.
+end note
+note over Men, B
+  1a (Mentore non assegnato ad alcun hackathon) e 2a (nessuna richiesta) → elenco vuoto.
+  Il Mentore puo' poi selezionare una richiesta per i dettagli e procedere con UC13.
+end note
+@enduml

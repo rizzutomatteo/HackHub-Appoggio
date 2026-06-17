@@ -1,0 +1,77 @@
+@startuml SEQ_AccettaPropostaCall
+' Diagramma di sequenza — realizzazione di UC14 Accetta Proposta Call (3a iterazione HackHub). Bozza (CHANGE).
+' Pattern Adapter: CalendarGateway conferma la prenotazione su Calendar (contratto sincrono §1.5);
+'   l'esterno e' raggiunto solo via adapter (client -> target -> adaptee).
+' Pattern Observer (riuso iter.2): ServizioNotifiche (Subject) notifica il Mentore (Observer).
+' GRASP: Controller (GestoreCall), Information Expert (PropostaCall.stato), Pure Fabrication (Repo*, CalendarGateway).
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Accetta Proposta Call (UC14)
+
+actor "Amministratore Team" as Adm
+boundary "PaginaAccettaCall" as B
+control "GestoreCall" as GC
+entity "proposta : PropostaCall" as P
+participant "CalendarGateway" as CG <<adapter>>
+participant "Calendar" as CAL <<sistema esterno>>
+participant "RepoPropostaCall" as RPC <<pure fabrication>>
+participant "ServizioNotifiche" as SN <<subject>>
+entity "men : Utente" as Men
+
+Adm -> B : accettaProposta(proposta)
+activate B
+B -> GC : accettaProposta(proposta)
+activate GC
+GC -> P : stato()
+activate P
+P --> GC : stato
+deactivate P
+
+alt proposta non piu' "Proposta" - gia' accettata/rifiutata/ritirata (UC14 3a)
+    GC --> B : non disponibile
+    B --> Adm : proposta non piu' disponibile
+else proposta valida
+    GC -> CG : confermaPrenotazione(proposta)
+    activate CG
+    CG -> CAL : conferma(riferimentoPrenotazione)
+    activate CAL
+    CAL --> CG : esito
+    deactivate CAL
+    CG --> GC : esito
+    deactivate CG
+    alt Calendar non disponibile o slot non piu' disponibile (UC14 4a)
+        GC --> B : prenotazione fallita
+        B --> Adm : impossibile confermare; la proposta resta in attesa
+    else prenotazione confermata
+        GC -> P : accetta()
+        GC -> RPC : salva(proposta)
+        GC -> SN : notifica(proposta)
+        activate SN
+        SN -> Men : aggiorna(proposta)
+        deactivate SN
+        GC --> B : esito positivo
+        B --> Adm : call confermata
+    end
+end
+deactivate GC
+deactivate B
+
+note over CG, CAL
+  Pattern Adapter: la conferma della prenotazione e' delegata a Calendar SOLO tramite
+  CalendarGateway (contratto sincrono, §1.5). PropostaCall.accetta() pone lo stato
+  "Accettata" e registra il riferimento di prenotazione confermato.
+end note
+note over GC, P
+  Idempotenza (3a): una proposta gia' accettata non viene ri-prenotata.
+  Solo l'Amministratore del Team destinatario puo' accettare (precondizione).
+end note
+note over SN, Men
+  Pattern Observer (riuso iter.2): il Mentore proponente e' notificato dell'accettazione.
+end note
+note over Adm, B
+  *a: in qualunque momento l'Amministratore puo' annullare: nessuna prenotazione.
+end note
+@enduml
