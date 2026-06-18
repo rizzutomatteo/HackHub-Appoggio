@@ -3,6 +3,8 @@
 ' Pattern State: la transizione InValutazione -> Concluso e' delegata allo stato corrente
 ' (InValutazione.concludi() crea Concluso). Information Expert: "tutte valutate" e classifica.
 ' Nuovo attributo Hackathon.vincitore (assente in iter.1).
+' AGGIORNATO (allineato al codice realizzato): si delega PRIMA la conclusione (stato.concludi());
+' il vincitore viene registrato solo se la transizione riesce (ordine come Hackathon.proclamaVincitore).
 hide footbox
 skinparam shadowing false
 skinparam sequenceMessageAlign center
@@ -53,13 +55,13 @@ else stato = InValutazione
             B -> GH : proclamaVincitore(hackathon, teamVincitore)
             GH -> H : proclamaVincitore(teamVincitore)
             activate H
-            H -> H : vincitore = teamVincitore
             H -> S : concludi()
             activate S
             create entity "concluso : Concluso" as S2
             S -> S2 : <<crea>>
             S --> H : concluso
             deactivate S
+            H -> H : vincitore = teamVincitore
             H -> H : stato = concluso
             H --> GH : esito positivo
             deactivate H
@@ -81,6 +83,7 @@ note over Org, B
   sceglie l'unico vincitore tra essi (UC08 4a; "un solo team vincitore").
 end note
 note over H, S
-  Pattern State: la conclusione e' delegata (InValutazione.concludi() -> Concluso).
+  Pattern State: la conclusione e' delegata PRIMA (InValutazione.concludi() -> Concluso);
+  l'Hackathon registra il vincitore solo se la transizione e' riuscita (ordine = codice).
 end note
 @enduml

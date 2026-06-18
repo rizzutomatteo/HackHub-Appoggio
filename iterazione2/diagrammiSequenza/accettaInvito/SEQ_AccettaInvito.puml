@@ -2,6 +2,9 @@
 ' Diagramma di sequenza — realizzazione di UC10 Accetta Invito (2a iterazione HackHub). Bozza (CHANGE).
 ' Information Expert: invariante "un utente, un solo team" verificato all'accettazione (chiude la TOCTOU).
 ' Creator: il Team crea l'Appartenenza (membro non amministratore). Pure Fabrication: Repo*.
+' AGGIORNATO (allineato al modello realizzato iter.2/3): il vincolo dimensione e' risolto "al volo" —
+' GestoreInviti usa RepoIscrizione.iscrizioniDi(team) per il dimensioneMaxTeam piu' restrittivo e chiama
+' Team.dimensioneCompatibile(dimensioneMax). [Risolve il "problema aperto" della bozza iniziale.]
 hide footbox
 skinparam shadowing false
 skinparam sequenceMessageAlign center
@@ -14,6 +17,7 @@ boundary "PaginaAccettaInvito" as B
 control "GestoreInviti" as GI
 participant "RepoInvito" as RInv <<pure fabrication>>
 participant "RepoUtente" as RU <<pure fabrication>>
+participant "RepoIscrizione" as RIscr <<pure fabrication>>
 entity "inv : Invito" as Inv
 entity "t : Team" as T
 participant "RepoTeam" as RT <<pure fabrication>>
@@ -37,7 +41,10 @@ else invito pendente
         GI --> B : invariante violata
         B --> Ut : appartieni gia' a un team (un solo team)
     else utente senza team
-        GI -> T : dimensioneCompatibile()
+        GI -> RIscr : iscrizioniDi(team)
+        RIscr --> GI : iscrizioni
+        GI -> GI : dimensioneMax = piu' restrittiva tra le iscrizioni
+        GI -> T : dimensioneCompatibile(dimensioneMax)
         activate T
         T --> GI : esito
         deactivate T
@@ -66,10 +73,11 @@ note over GI, RU
   "Un utente, un solo team" verificato all'accettazione (momento vincolante,
   chiude la finestra TOCTOU). Il nuovo membro non e' amministratore.
 end note
-note over T
-  dimensioneCompatibile(): l'aggiunta non deve superare dimensioneMaxTeam di
-  alcun hackathon a cui il team e' iscritto (vincolo di UC03).
-  Realizzazione esatta (verifica vs "congelamento" all'iscrizione): problema aperto.
+note over GI, T
+  Vincolo dimensione (UC10 passo 5): GestoreInviti ricava dalle iscrizioni del team
+  (RepoIscrizione.iscrizioniDi) il dimensioneMaxTeam piu' restrittivo e chiede al Team
+  se l'aggiunta e' compatibile (dimensioneCompatibile(dimensioneMax)); senza iscrizioni
+  nessun vincolo. Verifica "al volo" -> risolve il problema aperto della bozza iniziale.
 end note
 note over Ut, B
   Rifiutando/annullando, l'invito passa a Rifiutato; nessuna appartenenza creata (UC10 *a).
