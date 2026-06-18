@@ -77,7 +77,6 @@ class PropostaCall <<Entity>> {
   - stato : StatoCall
   + accetta() : void
   + rifiuta() : void
-  + getStato() : StatoCall
 }
 enum StatoRichiesta <<enumeration>> {
   Aperta

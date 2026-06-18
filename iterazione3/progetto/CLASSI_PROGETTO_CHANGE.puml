@@ -230,7 +230,6 @@ class PropostaCall <<Entity>> {
   - stato : StatoCall
   + accetta() : void
   + rifiuta() : void
-  + getStato() : StatoCall
 }
 
 ' =========================================================

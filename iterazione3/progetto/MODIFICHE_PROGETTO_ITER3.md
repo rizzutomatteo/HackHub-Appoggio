@@ -4,7 +4,7 @@
 > **Fonte.** `iterazione3/progetto/CLASSI_PROGETTO_CHANGE.puml` (vista **cumulativa** iter.1+2+3) e `CLASSI_PROGETTO_FOCUS_CHANGE.puml` (vista **focus** sul solo delta). Derivati dai diagrammi di sequenza UC11–UC15.
 > **Natura del delta.** Quasi tutto **additivo** (nuove classi/relazioni). **UNICA eccezione non additiva:** la generalizzazione del payload dell'**Observer** da `Invito` a `Notifica` (ritipa 4 operazioni esistenti — vedi §2 e ⚠️ in fondo).
 > **Convenzioni.** Vedi `CONVENZIONI_DIAGRAMMI.md` (stereotipi «Handler»/«service»/«Entity»/«Repository»/«enumeration»/«interface» + i nuovi «adapter»/«sistema esterno»; classi‑associazione mantenute; dipendenze «use»).
-> **Nota.** Questo documento riflette il diagramma **dopo** la revisione (council): firme già corrette (rimosso `verificaDisponibilita`, aggiunti `PropostaCall.getStato()` e `RepoPropostaCall.propostePerTeam`, handler `HandlerRichiedeSupporto`, dipendenze `GestoreCall → Team/Incarico`).
+> **Nota.** Questo documento riflette il diagramma **dopo** la revisione (council): firme già corrette (rimosso `verificaDisponibilita`, aggiunto `RepoPropostaCall.propostePerTeam`, handler `HandlerRichiedeSupporto`, dipendenze `GestoreCall → Team/Incarico`). Lo **stato** di `PropostaCall` si legge via l'attributo `- stato` (getter **omesso per convenzione**, come `Invito`; nei diagrammi di sequenza il messaggio è `stato()`).
 
 ---
 
@@ -45,10 +45,10 @@
 
 ### Entity «Entity»
 
-| Classe                | Attributi                                                                                       | Operazioni                                                                 |
-| --------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| **RichiestaSupporto** | `- messaggio : string`<br>`- dataRichiesta : date`<br>`- stato : StatoRichiesta`                | _(nessuna; creata e letta)_                                                |
-| **PropostaCall**      | `- dataOraProposta : dateTime`<br>`- riferimentoPrenotazione : string`<br>`- stato : StatoCall` | `+ accetta() : void`<br>`+ rifiuta() : void`<br>`+ getStato() : StatoCall` |
+| Classe                | Attributi                                                                                       | Operazioni                                   |
+| --------------------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| **RichiestaSupporto** | `- messaggio : string`<br>`- dataRichiesta : date`<br>`- stato : StatoRichiesta`                | _(nessuna; creata e letta)_                  |
+| **PropostaCall**      | `- dataOraProposta : dateTime`<br>`- riferimentoPrenotazione : string`<br>`- stato : StatoCall` | `+ accetta() : void`<br>`+ rifiuta() : void` |
 
 ### Enum «enumeration»
 
