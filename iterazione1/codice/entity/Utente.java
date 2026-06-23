@@ -1,5 +1,6 @@
 package it.unicam.cs.ids.hackhub.entity;
 
+import it.unicam.cs.ids.hackhub.observer.Notifica;
 import it.unicam.cs.ids.hackhub.observer.Observer;
 
 public class Utente implements Observer {
@@ -12,11 +13,11 @@ public class Utente implements Observer {
         this.email = email;
     }
 
-    // Pattern Observer: l'Utente e' notificato dei nuovi inviti (UC09). La consegna
-    // della notifica all'interfaccia utente e' demandata allo strato di presentazione
-    // (fuori dallo scope di questo scheletro di dominio, come l'autenticazione).
+    // Pattern Observer: l'Utente e' notificato (inviti, richieste di supporto, proposte di call).
+    // Da iter.3 il payload e' il marker Notifica. La consegna all'interfaccia utente e' demandata
+    // allo strato di presentazione (fuori dallo scope di questo scheletro di dominio).
     @Override
-    public void aggiorna(Invito invito) {
+    public void aggiorna(Notifica notifica) {
     }
 
     public String getNome() {

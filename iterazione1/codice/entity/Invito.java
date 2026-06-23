@@ -1,8 +1,11 @@
 package it.unicam.cs.ids.hackhub.entity;
 
+import it.unicam.cs.ids.hackhub.observer.Notifica;
+
 import java.time.LocalDate;
 
-public class Invito {
+// Da iter.3 Invito realizza Notifica: e' uno dei payload dell'Observer generalizzato.
+public class Invito implements Notifica {
 
     private final Team team;
     private final Utente utenteInvitato;

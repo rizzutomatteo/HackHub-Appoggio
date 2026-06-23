@@ -1,12 +1,12 @@
 package it.unicam.cs.ids.hackhub.observer;
 
-import it.unicam.cs.ids.hackhub.entity.Invito;
-
+// Pattern Observer: contratto del soggetto osservabile. Da iter.3 il payload di notifica
+// e' il marker Notifica (prima Invito).
 public interface Subject {
 
     void registra(Observer o);
 
     void rimuovi(Observer o);
 
-    void notifica(Invito invito);
+    void notifica(Notifica notifica);
 }
