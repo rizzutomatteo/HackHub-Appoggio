@@ -13,4 +13,8 @@ public interface RepoIscrizione {
     void salva(Iscrizione i);
 
     List<Iscrizione> iscrizioniDi(Team team);
+
+    // UC11 (iter.3): il team e' iscritto all'hackathon e l'hackathon e' nello stato InCorso
+    // (lettura del valore dello stato, NON una transizione).
+    boolean iscrizioneInCorso(Team team, Hackathon hackathon);
 }
