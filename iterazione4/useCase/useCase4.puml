@@ -1,0 +1,147 @@
+@startuml useCase4
+' Traduzione 1:1 della foto "useCase4.jpg" (HackHub) — modello completo dei casi d'uso
+' colorato per ITERAZIONE di realizzazione (chiusura, 4a iterazione):
+'   verde     = 1a iterazione (UC01-UC05)
+'   turchese  = 2a iterazione (UC06-UC10)
+'   arancione = 3a iterazione (UC11-UC15)
+'   giallo    = 4a iterazione (UC16-UC22)
+'   senza colore = caso d'uso del modello non pianificato in alcuna iterazione
+' Struttura (attori, generalizzazioni, relazioni) allineata a iterazione1/useCase/useCase.puml,
+' con le evoluzioni mostrate nella foto: "Invita staff"->"Aggiungi Mentore" (UC22),
+' "Rimuovi Staff"->"Rimuovi Mentore", aggiunto "Rimuovi Membro del Team".
+left to right direction
+skinparam packageStyle rectangle
+
+' ===== Attori primari =====
+actor "Membro staff"        as MembroStaff
+actor "Organizzatore"       as Organizzatore
+actor "Giudice"             as Giudice
+actor "Mentore"             as Mentore
+actor "Amministratore Team" as AmminTeam
+actor "Membro del team"     as MembroTeam
+actor "Utente"              as Utente
+actor "Visitatore"          as Visitatore
+
+' ===== Attori secondari (sistemi esterni) =====
+actor "Sistema Pagamento" as SistemaPagamento
+actor "Calendar"          as Calendar
+
+' ===== Generalizzazioni tra attori =====
+Organizzatore --|> MembroStaff
+Giudice       --|> MembroStaff
+Mentore       --|> MembroStaff
+AmminTeam     --|> MembroTeam
+
+rectangle HackHub {
+
+  ' --- Membro staff ---
+  usecase "Visualizza Sottomissioni\nHackathon Assegnato" as UC_VisSottAssegnato
+
+  ' --- Organizzatore ---
+  usecase "Elimina Hackathon"        as UC_EliminaHack
+  usecase "Gestisci Segnalazioni"    as UC_GestSegnal       #Gold
+  usecase "Modifica info Hackathon"  as UC_ModInfoHack
+  usecase "Rimuovi Mentore"          as UC_RimuoviMentore
+  usecase "Proclama Vincitore"       as UC_ProclamaVinc     #MediumTurquoise
+  usecase "Avvia Hackathon"          as UC_AvviaHack        #MediumTurquoise
+  usecase "Aggiungi Mentore"         as UC_AggiungiMentore  #Gold
+  usecase "Paga Montepremi"          as UC_PagaMontepremi   #Gold
+  usecase "Crea Hackathon"           as UC_CreaHack         #LightGreen
+  usecase "Inizia Fase Valutazione"  as UC_IniziaFaseVal    #MediumTurquoise
+
+  ' --- Giudice ---
+  usecase "Valuta Sottomissione"     as UC_ValutaSott       #LightGreen
+
+  ' --- Mentore ---
+  usecase "Segnala Team"                     as UC_SegnalaTeam   #Gold
+  usecase "Visualizza Richiesta di Supporto" as UC_VisRichSupp   #Orange
+  usecase "Propone Call"                     as UC_ProponeCall   #Orange
+
+  ' --- Amministratore Team ---
+  usecase "Rifiuta Proposta Call"   as UC_RifiutaCall       #Orange
+  usecase "Accetta Proposta Call"   as UC_AccettaCall       #Orange
+  usecase "Invita Membro"           as UC_InvitaMembro      #MediumTurquoise
+  usecase "Rende amministratore"    as UC_RendeAmmin
+  usecase "Elimina Team"            as UC_EliminaTeam
+  usecase "Rimuovi Membro del Team" as UC_RimuoviMembroTeam
+
+  ' --- Membro del team ---
+  usecase "Visualizza Risultati"             as UC_VisRisultati
+  usecase "Invia Sottomissione"              as UC_InviaSott      #LightGreen
+  usecase "Visualizza Sottomissioni Proprie" as UC_VisSottProprie
+  usecase "Visualizza Traccia Progetto"      as UC_VisTraccia
+  usecase "Iscrive Team"                     as UC_IscriveTeam    #LightGreen
+  usecase "Richiede Supporto"                as UC_RichiedeSupp   #Orange
+  usecase "Abbandona Team"                   as UC_AbbandonaTeam
+
+  ' --- Utente ---
+  usecase "Crea Team"                  as UC_CreaTeam        #LightGreen
+  usecase "Accetta Invito"             as UC_AccettaInvito   #MediumTurquoise
+  usecase "Visualizza lista Hackathon" as UC_VisListaHack
+  usecase "Logout"                     as UC_Logout
+
+  ' --- Visitatore ---
+  usecase "Accedi a informazioni pubbliche" as UC_AccediInfoPub  #Gold
+  usecase "Autenticazione"                  as UC_Autenticazione #Gold
+  usecase "Registrazione"                   as UC_Registrazione  #Gold
+}
+
+' ===== Associazioni attore - caso d'uso =====
+MembroStaff -- UC_VisSottAssegnato
+
+Organizzatore -- UC_EliminaHack
+Organizzatore -- UC_GestSegnal
+Organizzatore -- UC_ModInfoHack
+Organizzatore -- UC_RimuoviMentore
+Organizzatore -- UC_ProclamaVinc
+Organizzatore -- UC_AvviaHack
+Organizzatore -- UC_AggiungiMentore
+Organizzatore -- UC_PagaMontepremi
+Organizzatore -- UC_CreaHack
+Organizzatore -- UC_IniziaFaseVal
+
+Giudice -- UC_ValutaSott
+
+Mentore -- UC_SegnalaTeam
+Mentore -- UC_VisRichSupp
+Mentore -- UC_ProponeCall
+
+AmminTeam -- UC_RifiutaCall
+AmminTeam -- UC_AccettaCall
+AmminTeam -- UC_InvitaMembro
+AmminTeam -- UC_RendeAmmin
+AmminTeam -- UC_EliminaTeam
+AmminTeam -- UC_RimuoviMembroTeam
+
+MembroTeam -- UC_VisRisultati
+MembroTeam -- UC_InviaSott
+MembroTeam -- UC_VisSottProprie
+MembroTeam -- UC_VisTraccia
+MembroTeam -- UC_IscriveTeam
+MembroTeam -- UC_RichiedeSupp
+MembroTeam -- UC_AbbandonaTeam
+
+Utente -- UC_CreaTeam
+Utente -- UC_AccettaInvito
+Utente -- UC_VisListaHack
+Utente -- UC_Logout
+
+Visitatore -- UC_AccediInfoPub
+Visitatore -- UC_Autenticazione
+Visitatore -- UC_Registrazione
+
+' ===== Associazioni con attori secondari =====
+UC_PagaMontepremi -- SistemaPagamento
+UC_ProponeCall    -- Calendar
+UC_AccettaCall    -- Calendar
+
+legend right
+  Colore = iterazione in cui il caso d'uso e' realizzato
+  |<#LightGreen>      | 1a iterazione | Crea Hackathon (UC01), Crea Team (UC02), Iscrive Team (UC03), Invia Sottomissione (UC04), Valuta Sottomissione (UC05) |
+  |<#MediumTurquoise> | 2a iterazione | Avvia Hackathon (UC06), Inizia Fase Valutazione (UC07), Proclama Vincitore (UC08), Invita Membro (UC09), Accetta Invito (UC10) |
+  |<#Orange>          | 3a iterazione | Richiede Supporto (UC11), Visualizza Richiesta di Supporto (UC12), Propone Call (UC13), Accetta Proposta Call (UC14), Rifiuta Proposta Call (UC15) |
+  |<#Gold>            | 4a iterazione | Paga Montepremi (UC16), Segnala Team (UC17), Gestisci Segnalazioni (UC18), Registrazione (UC19), Autenticazione (UC20), Accedi a informazioni pubbliche (UC21), Aggiungi Mentore (UC22) |
+  |                   | non pianificato | casi d'uso del modello non realizzati in alcuna iterazione (bianco) |
+endlegend
+
+@enduml
