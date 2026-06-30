@@ -16,18 +16,18 @@ public class ServiceInvito {
     private final RepoUtente repoUtente;
     private final RepoTeam repoTeam;
     private final RepoIscrizione repoIscrizione;
-    private final ServizioNotifiche servizioNotifiche;
+    private final ServiceNotifiche serviceNotifiche;
 
     public ServiceInvito(RepoInvito repoInvito,
                          RepoUtente repoUtente,
                          RepoTeam repoTeam,
                          RepoIscrizione repoIscrizione,
-                         ServizioNotifiche servizioNotifiche) {
+                         ServiceNotifiche serviceNotifiche) {
         this.repoInvito = repoInvito;
         this.repoUtente = repoUtente;
         this.repoTeam = repoTeam;
         this.repoIscrizione = repoIscrizione;
-        this.servizioNotifiche = servizioNotifiche;
+        this.serviceNotifiche = serviceNotifiche;
     }
 
     public boolean invita(Team team, Utente utenteInvitato) {
@@ -40,7 +40,7 @@ public class ServiceInvito {
 
         Invito inv = new Invito(team, utenteInvitato);
         repoInvito.salva(inv);
-        servizioNotifiche.notifica(inv);
+        serviceNotifiche.notifica(inv);
         return true;
     }
 

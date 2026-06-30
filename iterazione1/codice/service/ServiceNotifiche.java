@@ -7,7 +7,7 @@ import it.unicam.cs.ids.hackhub.observer.Subject;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ServizioNotifiche implements Subject {
+public class ServiceNotifiche implements Subject {
 
     private final List<Observer> osservatori = new ArrayList<>();
 
