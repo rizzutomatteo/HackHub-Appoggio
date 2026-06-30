@@ -1,39 +1,27 @@
 @startuml CLASSI_PROGETTO_CHANGE
-' === PROPOSTA DI MODIFICA (CHANGE) su CLASSI_PROGETTO_REALIZZATI.puml ===
-' Delta rispetto al REALIZZATI:
-'  1. HandlerCreaHackathon.nuovoHackathon(organizzatore: Utente): cattura l'utente che avvia
-'     (stato "organizzatoreCorrente", non mostrato: convenzione boundary); ServiceHackathon.
-'     creaHackathon(...) riceve "organizzatore: Utente" e lo passa ad assegnaStaff; inserisceDati()
-'     NON lo porta (non e' un dato del form). organizzatore = utente autenticato: in iter.1 l'auth
-'     e' fuori scope (UC Autenticazione non realizzato), quindi entra come parametro-stub.
-'  2. HandlerCreaTeam.nuovoTeam(utente: Utente): cattura l'utente e chiama iniziaCreazioneTeam,
-'     allineato a SEQ_CreaTeam; stesso stub dell'organizzatore.
-'  3. Team.numeroMembri(): int reso esplicito (Information Expert; usato da verificaDimensione).
-'  4. Rimosso l'attributo ridondante "stato: Stato" da Hackathon: lo stato e' gia' espresso
-'     dall'associazione navigabile "Hackathon --> Stato : stato corrente".
-'  5. Legenda: corrispondenza nomi analisi<->progetto e rinvio delle transizioni di stato.
-' DIAGRAMMA DELLE CLASSI DI PROGETTAZIONE - HackHub, 1a iterazione.
-' Sorgente PlantUML allineato a classi_progetto_REALIZZATI.jpg (Visual Paradigm).
-' Stile progettazione (UML_07 slide 3-4): visibilita' esplicita, tipi, signature operazioni.
-' Pattern adottati:
-'   - State (GoF, Design Patterns): Stato astratto + InIscrizione/InCorso/InValutazione/Concluso.
-'   - GRASP: Controller, Creator, Information Expert, Pure Fabrication, Polymorphism.
-' Coerente con CLASSI_ANALISI_REALIZZATI.puml, CASI_USO_REALIZZATI.md, e i 5 sequence diagrams (UC01-UC05).
-' Naming: Handler* (boundary REST API), Service* (control), Repo* (persistenza Spring Data).
+' === TRASCRIZIONE FEDELE (gemello esatto) di CLASSI_PROGETTO_REALIZZATI.jpg (Visual Paradigm) ===
+' Questo .puml e' allineato 1:1 al JPG del deliverable, INCLUSE le caratteristiche del JPG che
+' divergono dal codice Java e dal modello "migliorato": naming GestoreTeam/GestoreHackathon (gli
+' altri control restano Service*), nuovoHackathon()/nuovoTeam() senza parametri, creaHackathon
+' SENZA organizzatore e con ritorno void, Hackathon CON attributo "stato: Stato" e SENZA
+' creaIscrizione, RepoHackathon senza metodi, RepoTeam.salva(parameter), nessuna legenda.
+' Anche le incoerenze di casing del JPG sono replicate (luogo: String nei parametri ma "string"
+' nell'attributo; mentori: List<Utente> in creaHackathon/inserisceDati ma "list<Utente>" in assegnaStaff).
+' Diagramma delle classi di PROGETTAZIONE - HackHub, 1a iterazione.
 !pragma layout elk
 hide empty members
 hide circle
 
 ' =========================================================
-' LAYER 1 - Boundary («Handler») - REST API endpoints
+' LAYER 1 - Boundary («Handler»)
 ' =========================================================
 class HandlerCreaHackathon <<Handler>> {
-  + nuovoHackathon(organizzatore: Utente): void
-  + inserisceDati(nome: string, dataInizio: Date, dataFine: Date, luogo: string, regolamento: string, scadenzaIscrizioni: Date, dimensioneMaxTeam: int, montepremi: long, giudice: Utente, mentori: List<Utente>): void
+  + nuovoHackathon(): void
+  + inserisceDati(nome: string, dataInizio: Date, dataFine: Date, luogo: String, regolamento: string, scadenzaIscrizioni: Date, dimensioneMaxTeam: int, montepremi: long, giudice: Utente, mentori: List<Utente>): void
 }
 
 class HandlerCreaTeam <<Handler>> {
-  + nuovoTeam(utente: Utente): void
+  + nuovoTeam(): void
   + inserisceNome(nome: string): void
 }
 
@@ -55,13 +43,13 @@ class HandlerValutazione <<Handler>> {
 }
 
 ' =========================================================
-' LAYER 2 - Control («service») - GRASP Controller, Spring @Service
+' LAYER 2 - Control («service»)
 ' =========================================================
-class ServiceHackathon <<service>> {
-  + creaHackathon(nome: string, dataInizio: Date, dataFine: Date, luogo: string, regolamento: string, scadenzaIscrizioni: Date, dimensioneMaxTeam: int, montepremi: long, organizzatore: Utente, giudice: Utente, mentori: List<Utente>): boolean
+class GestoreHackathon <<service>> {
+  + creaHackathon(nome: string, dataInizio: Date, dataFine: Date, luogo: String, regolamento: string, scadenzaIscrizioni: Date, dimensioneMaxTeam: int, montepremi: long, giudice: Utente, mentori: List<Utente>): void
 }
 
-class ServiceTeam <<service>> {
+class GestoreTeam <<service>> {
   + iniziaCreazioneTeam(utente: Utente): boolean
   + creaTeam(nome: string): boolean
 }
@@ -98,13 +86,13 @@ class Hackathon <<Entity>> {
   - luogo: string
   - montepremi: long
   - dimensioneMaxTeam: int
-  + assegnaStaff(organizzatore: Utente, giudice: Utente, mentori: List<Utente>): void
+  - stato: Stato
+  + assegnaStaff(organizzatore: Utente, giudice: Utente, mentori: list<Utente>): void
   + iscrivibile(team: Team): boolean
   - verificaDimensione(team: Team): boolean
   + iscrizioneConsentita(): boolean
   + sottomissioneConsentita(): boolean
   + valutazioneConsentita(): boolean
-  + creaIscrizione(team: Team): Iscrizione
 }
 
 class Team <<Entity>> {
@@ -139,7 +127,6 @@ class Valutazione <<Entity>> {
 
 ' =========================================================
 ' Pattern State (GoF) - Stato astratto + 4 concreti
-' (Hackathon e' il Context; delega le decisioni di stato per polimorfismo.)
 ' =========================================================
 abstract class Stato {
   + iscrizioneConsentita(): boolean
@@ -169,20 +156,19 @@ enum RuoloStaff {
 }
 
 ' =========================================================
-' LAYER 4 - Repository («Repository») - Spring Data interfaces
-' Solo i Service vi accedono; le entita' non conoscono la persistenza.
+' LAYER 4 - Repository («Repository»)
+' (RepoHackathon e' senza metodi nel JPG)
 ' =========================================================
 interface RepoUtente <<Repository>> {
   + appartieneAdUnTeam(u: Utente): boolean
 }
 
 interface RepoHackathon <<Repository>> {
-  + salva(h: Hackathon): void
 }
 
 interface RepoTeam <<Repository>> {
   + esisteNome(nome: string): boolean
-  + salva(t: Team): void
+  + salva(parameter): void
 }
 
 interface RepoIscrizione <<Repository>> {
@@ -231,63 +217,28 @@ Utente "1" -- "0..*" Valutazione : redige
 Incarico ..> RuoloStaff
 
 ' --- EBC: Boundary -> Control ---
-HandlerCreaHackathon ..> ServiceHackathon
-HandlerCreaTeam      ..> ServiceTeam
+HandlerCreaHackathon ..> GestoreHackathon
+HandlerCreaTeam      ..> GestoreTeam
 HandlerIscrizione    ..> ServiceIscrizione
 HandlerSottomissione ..> ServiceSottomissione
 HandlerValutazione   ..> ServiceValutazione
 
 ' --- Control -> Repository (Pure Fabrication) ---
-ServiceHackathon     ..> RepoHackathon
-ServiceTeam          ..> RepoUtente
-ServiceTeam          ..> RepoTeam
+GestoreHackathon     ..> RepoHackathon
+GestoreTeam          ..> RepoUtente
+GestoreTeam          ..> RepoTeam
 ServiceIscrizione    ..> RepoIscrizione
 ServiceSottomissione ..> RepoSottomissione
 ServiceValutazione   ..> RepoSottomissione
 ServiceValutazione   ..> RepoValutazione
 
 ' --- Control -> Entity (uso/orchestrazione) ---
-ServiceHackathon     ..> Hackathon
-ServiceTeam          ..> Team
+GestoreHackathon     ..> Hackathon
+GestoreTeam          ..> Team
 ServiceIscrizione    ..> Hackathon
 ServiceSottomissione ..> Iscrizione
 ServiceSottomissione ..> Hackathon
 ServiceValutazione   ..> Sottomissione
 ServiceValutazione   ..> Hackathon
-
-' =========================================================
-legend right
-  **Diagramma delle classi di PROGETTAZIONE** - HackHub (1a iterazione).
-  --
-  **Stereotipi:** «Handler» REST endpoint (boundary EBC) · «service» Service/Controller GRASP ·
-  «Entity» dominio · «Repository» persistenza (pure fabrication GRASP).
-  --
-  **Corrispondenza analisi->progetto** (sequence diagram): PaginaX (boundary) = HandlerX ·
-  GestoreX (control) = ServiceX. Le associazioni senza freccia hanno navigabilita' non specificata
-  (scelta di progetto); Boundary->Control e Control->Repository sono dipendenze (EBC / DI Spring).
-  --
-  **Pattern State (GoF):** Stato (astratto) + InIscrizione / InCorso / InValutazione / Concluso (concreti).
-  Hackathon e' il Context: delega iscrizioneConsentita(), sottomissioneConsentita(),
-  valutazioneConsentita() allo stato corrente (Polymorphism).
-  In iter.1 il Context inizializza a InIscrizione; le TRANSIZIONI appartengono alle UC Avvia Hackathon /
-  Inizia Fase Valutazione / Proclama Vincitore (iterazioni successive), percio' non sono modellate qui
-  (Invia/Valuta Sottomissione verificano solo la precondizione di stato).
-  --
-  **GRASP:** Controller (Service) · Creator (composizioni: Hackathon->Stato/Incarico,
-  Team->Appartenenza, Iscrizione->Sottomissione, Sottomissione->Valutazione) ·
-  Information Expert (Hackathon su verificaDimensione/iscrivibile/creaIscrizione;
-  Iscrizione su 0..1 Sottomissione; Valutazione su invariante 0..10) ·
-  Pure Fabrication (Repository) · Polymorphism (delega State).
-  --
-  **Vincoli (non grafici):**
-  • Hackathon: esattamente 1 Organizzatore, 1 Giudice, 1..* Mentori (Incarico).
-  • Organizzatore = utente che avvia la creazione (utente autenticato). In iter.1 l'auth
-    non e' realizzata: entra come parametro-stub di nuovoHackathon e diventa Incarico Organizzatore.
-  • Team: almeno una Appartenenza ha amministratore = vero.
-  • Valutazione: 0 <= punteggio <= 10; giudizio non vuoto; il giudice
-    coincide col Giudice dell'Incarico dell'Hackathon dell'Iscrizione relativa alla Sottomissione.
-  • Iscrizione: contiene al piu' una Sottomissione (re-invio sovrascrive - UC04 passo 7).
-  • Un Utente appartiene al piu' a un Team (Appartenenza, molteplicita 0..1).
-endlegend
 
 @enduml
