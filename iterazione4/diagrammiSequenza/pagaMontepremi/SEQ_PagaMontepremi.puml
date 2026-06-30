@@ -1,0 +1,89 @@
+@startuml SEQ_PagaMontepremi
+' Diagramma di sequenza — realizzazione di UC16 Paga Montepremi (4a iterazione HackHub). Bozza (CHANGE).
+' Pattern Adapter (RIUSO iter.3, stessa famiglia di CalendarGateway): PaymentGateway isola l'API esterna
+'   Sistema di Pagamento (erogazione sincrona, §1.5); il control dipende SOLO dalla porta, l'esterno e'
+'   raggiunto solo via adapter (client -> target -> adaptee).
+' GRASP: Controller (GestorePagamento), Creator (crea Pagamento), Pure Fabrication (RepoPagamento, PaymentGateway).
+' Pagamento.stato e' un enum (Inviato/Completato/Fallito), NON un pattern State. Idempotenza: al piu' un Pagamento "Completato" per hackathon.
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Paga Montepremi (UC16)
+
+actor "Organizzatore" as Org
+boundary "PaginaPagaMontepremi" as B
+control "GestorePagamento" as GP
+participant "RepoPagamento" as RPag <<pure fabrication>>
+participant "PaymentGateway" as PG <<adapter>>
+participant "Sistema di Pagamento" as SP <<sistema esterno>>
+entity "h : Hackathon" as H
+
+Org -> B : pagaMontepremi(hackathon)
+activate B
+B -> GP : paga(hackathon)
+activate GP
+GP -> H : vincitore()
+activate H
+H --> GP : teamVincitore
+GP -> H : montepremi()
+H --> GP : importo
+deactivate H
+
+alt hackathon non Concluso o senza vincitore (UC16 1a)
+    GP --> B : pagamento non consentito
+    B --> Org : il premio si eroga solo a hackathon concluso con vincitore
+else hackathon Concluso con vincitore proclamato (UC08)
+    GP -> RPag : esistePagamentoCompletato(hackathon)
+    RPag --> GP : esito
+    alt premio gia' erogato (UC16 2a)
+        GP --> B : duplicato
+        B --> Org : montepremi gia' erogato (idempotenza)
+    else premio non ancora erogato
+        GP -> PG : erogaPremio(teamVincitore, importo)
+        activate PG
+        PG -> SP : eroga(importo)
+        activate SP
+        SP --> PG : esito
+        deactivate SP
+        PG --> GP : esito
+        deactivate PG
+        alt Sistema di Pagamento non disponibile (UC16 3a)
+            GP --> B : servizio esterno non disponibile
+            B --> Org : erogazione non possibile ora; riprovare (nessun pagamento)
+        else erogazione rifiutata (UC16 3b)
+            create entity "pag : Pagamento" as PagKo
+            GP -> PagKo : <<crea>>(hackathon, teamVincitore, importo, stato = Fallito)
+            GP -> RPag : salva(pag)
+            GP --> B : erogazione rifiutata
+            B --> Org : pagamento fallito (fondi/transazione respinta)
+        else erogazione completata (esito = riferimentoPagamento)
+            create entity "pag : Pagamento" as PagOk
+            GP -> PagOk : <<crea>>(hackathon, teamVincitore, importo, riferimentoPagamento, stato = Completato)
+            GP -> RPag : salva(pag)
+            GP --> B : esito positivo
+            B --> Org : montepremi erogato al team vincitore
+        end
+    end
+end
+deactivate GP
+deactivate B
+
+note over PG, SP
+  Pattern Adapter (riuso iter.3, gemello di CalendarGateway): la piattaforma dipende solo dalla
+  porta PaymentGateway; il Sistema di Pagamento (Adaptee) e' raggiunto SOLO tramite l'adapter
+  (contratto sincrono, §1.5). erogaPremio restituisce il riferimentoPagamento se la transazione
+  va a buon fine, altrimenti l'indisponibilita' (3a) o il rifiuto (3b).
+end note
+note over GP, RPag
+  Idempotenza (UC16 2a): un hackathon il cui premio e' gia' stato erogato (Pagamento "Completato")
+  non viene ri-pagato. "Concluso con vincitore": il vincitore e' impostato solo da UC08
+  (proclamazione), che pone anche lo stato a Concluso → avere un vincitore implica lo stato Concluso.
+end note
+note over Org, B
+  *a: in qualunque momento l'Organizzatore puo' annullare; nessuna erogazione.
+  Auth (precondizione, stub): l'Organizzatore corrente e' assegnato all'hackathon (Incarico, ruolo = Organizzatore).
+  Observer opzionale (problema aperto §4.5): notificare il team vincitore dell'avvenuto pagamento.
+end note
+@enduml
