@@ -1,0 +1,54 @@
+@startuml SEQ_Registrazione
+' Diagramma di sequenza — realizzazione di UC19 Registrazione (4a iterazione HackHub). Bozza (CHANGE).
+' GRASP: Controller (GestoreAccount), Creator (crea Utente), Pure Fabrication (RepoUtente).
+' Autenticazione "sottile" (D4): si crea l'Utente con credenziali; niente hashing forte/sessioni/token (fuori scope, §4.5).
+' Salda il debito dell'"utente corrente" trattato come stub nelle iter.1-3. L'accesso e' un UC distinto (UC20).
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Registrazione (UC19)
+
+actor "Visitatore" as Vis
+boundary "PaginaRegistrazione" as B
+control "GestoreAccount" as GA
+participant "RepoUtente" as RU <<pure fabrication>>
+
+Vis -> B : registrati()
+activate B
+B --> Vis : mostra modulo (nome, email, password)
+Vis -> B : inserisci dati, conferma
+B -> GA : registra(nome, email, password)
+activate GA
+
+alt dati non validi (UC19 4b)
+    GA --> B : dati non validi
+    B --> Vis : segnala i campi non validi (email malformata / password debole / mancanti)
+else dati validi
+    GA -> RU : esisteEmail(email)
+    RU --> GA : esito
+    alt email gia' in uso (UC19 4a)
+        GA --> B : email gia' registrata
+        B --> Vis : email gia' in uso; scegliere un'altra email
+    else email libera
+        create entity "u : Utente" as U
+        GA -> U : <<crea>>(nome, email, password)
+        GA -> RU : salva(u)
+        GA --> B : esito positivo
+        B --> Vis : registrazione completata (ora puoi accedere)
+    end
+end
+deactivate GA
+deactivate B
+
+note over GA, RU
+  Email univoca (identita' dell'utente): esisteEmail evita i duplicati.
+  Autenticazione "sottile" (D4): l'Utente e' creato con le credenziali; hashing robusto,
+  sessioni/token, ruoli a runtime restano fuori scope (§4.5).
+end note
+note over Vis, B
+  4a/4b: jump al passo 2 (re-inserimento). *a: in qualunque momento il Visitatore annulla; nessun utente creato.
+  La registrazione NON abilita di per se' le funzionalita' riservate: serve l'accesso (UC20).
+end note
+@enduml
