@@ -6,6 +6,9 @@
 *.lck
 *.vpp.bak*
 
+# PlantUML jar del renderer locale (binario ~22MB, non sorgente: si riscarica)
+scripts/lib/plantuml.jar
+
 # Config IDE JetBrains / VS Code e cruft OS (locale, non versionare)
 .idea/
 *.iml
