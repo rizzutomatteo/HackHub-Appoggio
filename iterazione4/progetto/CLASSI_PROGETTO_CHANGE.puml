@@ -1,0 +1,553 @@
+@startuml CLASSI_PROGETTO_CHANGE
+' ============================================================================
+' DIAGRAMMA CLASSI DI PROGETTAZIONE — HackHub, 4a iterazione (chiusura). Bozza (CHANGE).
+' ============================================================================
+' Modello CUMULATIVO (iter. 1-4). BASATO su iterazione3/progetto/CLASSI_PROGETTO_CHANGE.puml
+' (gemello del deliverable iter.3): stesse convenzioni e stile — control «service» naming Service*,
+' interfacce «Interface», stati «Stato», classi-associazione MANTENUTE (Incarico/Appartenenza/Iscrizione),
+' catena del valore come COMPOSIZIONI (contiene/riceve), Hackathon con attributo stato : Stato,
+' Observer con payload generalizzato «Notifica», Adapter per i sistemi esterni.
+' A questo si AGGIUNGE tutto cio' che introduce la 4a iterazione (UC16-UC22, cfr.
+' iterazione4/useCase/CASI_USO_REALIZZATI.md §4.3 e iterazione4/diagrammiSequenza/*):
+'   - Adapter (2° sistema esterno): PaymentGateway «Interface» + AdapterPagamento «adapter» → SistemaPagamento «sistema esterno» (UC16);
+'   - Entita' Pagamento (+ enum StatoPagamento) e Segnalazione (+ enum StatoSegnalazione);
+'   - Observer: Notifica <|.. Segnalazione (UC17 notifica l'Organizzatore);
+'   - Utente.password (+ verificaPassword) per UC19/UC20;
+'   - Control ServicePagamento (UC16), ServiceSegnalazione (UC17/UC18), ServiceAccount (UC19/UC20);
+'     ServiceHackathon esteso con hackathonPubblici (UC21) e aggiungiMentore (UC22);
+'   - Hackathon.aggiungiMentore (UC22, riuso di assegnaStaff → Incarico ruolo Mentore);
+'   - Repo: RepoPagamento, RepoSegnalazione; RepoUtente e RepoHackathon estesi coi metodi usati da iter.4;
+'   - Handler per-UC: PagaMontepremi, SegnalaTeam, GestisciSegnalazione, Registrazione, Autenticazione,
+'     AccediInformazioniPubbliche, AggiungiMentore.
+' NB: layout ELK (azzera gli incroci); le posizioni finali si rifiniscono in Visual Paradigm.
+!pragma layout elk
+hide empty members
+hide circle
+
+' =========================================================
+' Boundary «Handler» (per-UC)
+' =========================================================
+class HandlerCreaTeam <<Handler>> {
+  + nuovoTeam() : void
+  + inserisceNome(nome : string) : void
+}
+class HandlerCreaHackathon <<Handler>> {
+  + nuovoHackathon() : void
+  + inserisceDati(nome : string, dataInizio : Date, dataFine : Date, luogo : String, regolamento : string, scadenzaIscrizioni : Date, dimensioneMaxTeam : int, montepremi : long, giudice : Utente, mentori : List<Utente>) : void
+}
+class HandlerAvviaHackathon <<Handler>> {
+  + avviaHackathon(hackathon : Hackathon) : void
+}
+class HandlerIniziaFaseValutazione <<Handler>> {
+  + iniziaFaseValutazione(hackathon : Hackathon) : void
+}
+class HandlerProclamaVincitore <<Handler>> {
+  + apriProclamazione(hackathon : Hackathon) : void
+  + proclama(hackathon : Hackathon, teamVincitore : Team) : void
+}
+class HandlerIscrizione <<Handler>> {
+  + richiediIscrizione(team : Team, hackathon : Hackathon) : void
+}
+class HandlerSottomissione <<Handler>> {
+  + apriModulo(iscrizione : Iscrizione) : void
+  + caricaInvia(titolo : string, contenuto : string) : void
+  + conferma() : void
+  + annulla() : void
+}
+class HandlerValutazione <<Handler>> {
+  + apriElenco(hackathon : Hackathon) : void
+  + selezionaSottomissione(sub : Sottomissione) : void
+  + valuta(giudizio : string, punteggio : int) : void
+}
+class HandlerInvitaMembro <<Handler>> {
+  + invitaMembro(team : Team, utenteInvitato : Utente) : void
+}
+class HandlerAccettaInvito <<Handler>> {
+  + accettaInvito(invito : Invito) : void
+}
+class HandlerRichiedeSupporto <<Handler>> {
+  + richiediSupporto(team : Team, hackathon : Hackathon) : void
+  + confermaRichiesta(messaggio : string) : void
+}
+class HandlerVisualizzaRichieste <<Handler>> {
+  + visualizzaRichieste(mentore : Utente) : void
+}
+class HandlerProponeCall <<Handler>> {
+  + proponiCall(richiesta : RichiestaSupporto) : void
+  + confermaSlot(slot : dateTime) : void
+}
+class HandlerAccettaCall <<Handler>> {
+  + accettaProposta(proposta : PropostaCall) : void
+}
+class HandlerRifiutaCall <<Handler>> {
+  + rifiutaProposta(proposta : PropostaCall) : void
+}
+class HandlerPagaMontepremi <<Handler>> {
+  + pagaMontepremi(hackathon : Hackathon) : void
+}
+class HandlerSegnalaTeam <<Handler>> {
+  + segnalaTeam(team : Team, hackathon : Hackathon) : void
+  + confermaSegnalazione(descrizione : string) : void
+}
+class HandlerGestisciSegnalazione <<Handler>> {
+  + visualizzaSegnalazioni(organizzatore : Utente) : void
+  + gestisci(segnalazione : Segnalazione, decisione : string) : void
+  + archivia(segnalazione : Segnalazione) : void
+}
+class HandlerRegistrazione <<Handler>> {
+  + registrati() : void
+  + inserisceDati(nome : string, email : string, password : string) : void
+}
+class HandlerAutenticazione <<Handler>> {
+  + accedi() : void
+  + inserisceCredenziali(email : string, password : string) : void
+}
+class HandlerAccediInformazioniPubbliche <<Handler>> {
+  + consultaHackathon() : void
+}
+class HandlerAggiungiMentore <<Handler>> {
+  + aggiungiMentore(hackathon : Hackathon, utente : Utente) : void
+}
+
+' =========================================================
+' Control «service» (tutti "Service*" - come iter.3)
+' =========================================================
+class ServiceTeam <<service>> {
+  + iniziaCreazioneTeam(utente : Utente) : boolean
+  + creaTeam(nome : string) : boolean
+}
+class ServiceHackathon <<service>> {
+  + creaHackathon(nome : string, dataInizio : Date, dataFine : Date, luogo : String, regolamento : string, scadenzaIscrizioni : Date, dimensioneMaxTeam : int, montepremi : long, giudice : Utente, mentori : List<Utente>) : boolean
+  + avvia(hackathon : Hackathon) : boolean
+  + iniziaFaseValutazione(hackathon : Hackathon) : boolean
+  + preparaProclamazione() : List<Sottomissione>
+  + proclamaVincitore(hackathon : Hackathon, teamVincitore : Team) : boolean
+  + hackathonPubblici() : List<Hackathon>
+  + aggiungiMentore(organizzatore : Utente, hackathon : Hackathon, utente : Utente) : boolean
+  - organizzatoreAssegnato(organizzatore : Utente, hackathon : Hackathon) : boolean
+}
+class ServiceIscrizione <<service>> {
+  + iscriviTeam(team : Team, hackathon : Hackathon) : boolean
+}
+class ServiceSottomissione <<service>> {
+  + sottomissioneConsentita(iscrizione : Iscrizione) : boolean
+  + inviaSottomissione(iscrizione : Iscrizione, titolo : string, contenuto : string) : boolean
+}
+class ServiceValutazione <<service>> {
+  + elencoSottomissioni(hackathon : Hackathon) : List<Sottomissione>
+  + dettagli(sub : Sottomissione) : Sottomissione
+  + valuta(sub : Sottomissione, giudizio : string, punteggio : int) : boolean
+}
+class ServiceInvito <<service>> {
+  + invita(team : Team, utenteInvitato : Utente) : boolean
+  + accetta(invito : Invito) : boolean
+}
+class ServiceSupporto <<service>> {
+  + richiediSupporto(team : Team, hackathon : Hackathon, messaggio : string) : boolean
+  + richiesteDelMentore(mentore : Utente) : List<RichiestaSupporto>
+}
+class ServiceCall <<service>> {
+  + proponiCall(mentore : Utente, richiesta : RichiestaSupporto, slot : dateTime) : boolean
+  + accettaProposta(proposta : PropostaCall) : boolean
+  + rifiutaProposta(proposta : PropostaCall) : boolean
+  - mentoreAssegnato(mentore : Utente, richiesta : RichiestaSupporto) : boolean
+}
+class ServicePagamento <<service>> {
+  + paga(hackathon : Hackathon) : boolean
+}
+class ServiceSegnalazione <<service>> {
+  + segnala(mentore : Utente, team : Team, hackathon : Hackathon, descrizione : string) : boolean
+  + segnalazioniDellOrganizzatore(organizzatore : Utente) : List<Segnalazione>
+  + gestisci(segnalazione : Segnalazione, decisione : string) : boolean
+  + archivia(segnalazione : Segnalazione) : boolean
+  - mentoreAssegnato(mentore : Utente, hackathon : Hackathon) : boolean
+}
+class ServiceAccount <<service>> {
+  + registra(nome : string, email : string, password : string) : boolean
+  + autentica(email : string, password : string) : Utente
+  - verificaCredenziali(utente : Utente, password : string) : boolean
+}
+class ServiceNotifiche <<service>> {
+  + registra(o : Observer) : void
+  + rimuovi(o : Observer) : void
+  + notifica(n : Notifica) : void
+}
+
+' =========================================================
+' Pattern OBSERVER (interfacce)
+' =========================================================
+interface Subject <<Interface>> {
+  + registra(o : Observer) : void
+  + rimuovi(o : Observer) : void
+  + notifica(n : Notifica) : void
+}
+interface Observer <<Interface>> {
+  + aggiorna(n : Notifica) : void
+}
+interface Notifica <<Interface>> {
+}
+
+' =========================================================
+' Pattern ADAPTER — Calendar (iter.3) + Sistema di Pagamento (iter.4)
+' =========================================================
+interface CalendarGateway <<Interface>> {
+  + riservaSlot(slot : dateTime) : string
+  + confermaPrenotazione(proposta : PropostaCall) : boolean
+}
+class AdapterCalendar <<adapter>> {
+  + riservaSlot(slot : dateTime) : string
+  + confermaPrenotazione(proposta : PropostaCall) : boolean
+}
+class Calendar <<sistema esterno>> {
+  + riserva(slot : dateTime) : string
+  + conferma(riferimentoPrenotazione : string) : boolean
+}
+interface PaymentGateway <<Interface>> {
+  + erogaPremio(team : Team, importo : long) : string
+}
+class AdapterPagamento <<adapter>> {
+  + erogaPremio(team : Team, importo : long) : string
+}
+class SistemaPagamento <<sistema esterno>> {
+  + eroga(importo : long) : string
+}
+
+' =========================================================
+' Entity «Entity»
+' =========================================================
+class Utente <<Entity>> {
+  - nome : string
+  - email : string
+  - password : string
+  + aggiorna(n : Notifica) : void
+  + verificaPassword(password : string) : boolean
+}
+class Team <<Entity>> {
+  - nome : string
+  + numeroMembri() : int
+  + aggiungiMembro(utente : Utente) : Appartenenza
+}
+class Appartenenza <<Entity>> {
+  - amministratore : boolean
+}
+class Hackathon <<Entity>> {
+  - nome : string
+  - regolamento : string
+  - scadenzaIscrizioni : date
+  - dataInizio : date
+  - dataFine : date
+  - luogo : string
+  - montepremi : long
+  - dimensioneMaxTeam : int
+  - stato : Stato
+  + assegnaStaff(organizzatore : Utente, giudice : Utente, mentori : list<Utente>) : void
+  + aggiungiMentore(utente : Utente) : Incarico
+  + iscrivibile(team : Team) : boolean
+  - verificaDimensione(team : Team) : boolean
+  + iscrizioneConsentita() : boolean
+  + sottomissioneConsentita() : boolean
+  + valutazioneConsentita() : boolean
+  + avvia() : boolean
+  + iniziaFaseValutazione() : boolean
+  + proclamaVincitore(teamVincitore : Team) : boolean
+}
+class Incarico <<Entity>> {
+  - ruolo : RuoloStaff
+}
+class Iscrizione <<Entity>> {
+  - dataIscrizione : date
+  + creaSottomissione(titolo : string, contenuto : string) : Sottomissione
+}
+class Invito <<Entity>> {
+  - dataInvito : date
+  - stato : StatoInvito
+  + accetta() : void
+  + rifiuta() : void
+}
+class Sottomissione <<Entity>> {
+  - titolo : string
+  - contenuto : string
+  - dataOra : dateTime
+  + registraValutazione(giudizio : string, punteggio : int, giudice : Utente) : Valutazione
+}
+class Valutazione <<Entity>> {
+  - giudizio : string
+  - punteggio : int
+}
+class RichiestaSupporto <<Entity>> {
+  - messaggio : string
+  - dataRichiesta : date
+  - stato : StatoRichiesta
+}
+class PropostaCall <<Entity>> {
+  - dataOraProposta : dateTime
+  - riferimentoPrenotazione : string
+  - stato : StatoCall
+  + accetta() : void
+  + rifiuta() : void
+}
+class Pagamento <<Entity>> {
+  - importo : long
+  - dataPagamento : date
+  - riferimentoPagamento : string
+  - stato : StatoPagamento
+}
+class Segnalazione <<Entity>> {
+  - descrizione : string
+  - dataSegnalazione : date
+  - stato : StatoSegnalazione
+  + gestisci(decisione : string) : void
+  + archivia() : void
+}
+
+' =========================================================
+' Pattern STATE (stereotipo «Stato»)
+' =========================================================
+abstract class Stato <<Stato>> {
+  + iscrizioneConsentita() : boolean
+  + sottomissioneConsentita() : boolean
+  + valutazioneConsentita() : boolean
+  + avvia() : Stato
+  + iniziaValutazione() : Stato
+  + concludi() : Stato
+}
+class InIscrizione <<Stato>> {
+}
+class InCorso <<Stato>> {
+}
+class InValutazione <<Stato>> {
+}
+class Concluso <<Stato>> {
+}
+
+' =========================================================
+' Enumerazioni «enumeration»
+' =========================================================
+enum RuoloStaff <<enumeration>> {
+  Organizzatore
+  Giudice
+  Mentore
+}
+enum StatoInvito <<enumeration>> {
+  Pendente
+  Accettato
+  Rifiutato
+}
+enum StatoRichiesta <<enumeration>> {
+  Aperta
+  Gestita
+  Chiusa
+}
+enum StatoCall <<enumeration>> {
+  Proposta
+  Accettata
+  Rifiutata
+}
+enum StatoPagamento <<enumeration>> {
+  Inviato
+  Completato
+  Fallito
+}
+enum StatoSegnalazione <<enumeration>> {
+  Aperta
+  Gestita
+  Archiviata
+}
+
+' =========================================================
+' Repository «Repository»
+' =========================================================
+class RepoTeam <<Repository>> {
+  + esisteNome(nome : string) : boolean
+  + salva(parameter) : void
+}
+class RepoUtente <<Repository>> {
+  + appartieneAdUnTeam(u : Utente) : boolean
+  + esisteEmail(email : string) : boolean
+  + trovaPerEmail(email : string) : Utente
+  + salva(u : Utente) : void
+}
+class RepoHackathon <<Repository>> {
+  + tutti() : List<Hackathon>
+  + salva(h : Hackathon) : void
+}
+class RepoIscrizione <<Repository>> {
+  + esisteIscrizione(team : Team, hackathon : Hackathon) : boolean
+  + salva(i : Iscrizione) : void
+  + iscrizioneInCorso(team : Team, hackathon : Hackathon) : boolean
+}
+class RepoSottomissione <<Repository>> {
+  + salva(sub : Sottomissione) : void
+  + sottomissioniDi(h : Hackathon) : List<Sottomissione>
+}
+class RepoValutazione <<Repository>> {
+  + salva(v : Valutazione) : void
+}
+class RepoInvito <<Repository>> {
+  + esisteInvitoPendente(team : Team, u : Utente) : boolean
+  + salva(inv : Invito) : void
+}
+class RepoRichiestaSupporto <<Repository>> {
+  + esisteRichiestaAperta(team : Team, hackathon : Hackathon) : boolean
+  + trovaPerHackathonDelMentore(mentore : Utente) : List<RichiestaSupporto>
+  + salva(r : RichiestaSupporto) : void
+}
+class RepoPropostaCall <<Repository>> {
+  + propostePerTeam(team : Team) : List<PropostaCall>
+  + salva(proposta : PropostaCall) : void
+}
+class RepoPagamento <<Repository>> {
+  + esistePagamentoCompletato(hackathon : Hackathon) : boolean
+  + salva(pag : Pagamento) : void
+}
+class RepoSegnalazione <<Repository>> {
+  + esisteSegnalazioneAperta(mentore : Utente, team : Team, hackathon : Hackathon) : boolean
+  + trovaPerHackathonDellOrganizzatore(organizzatore : Utente) : List<Segnalazione>
+  + salva(seg : Segnalazione) : void
+}
+
+' =========================================================
+' RELAZIONI
+' =========================================================
+
+' --- Dominio: classi-associazione (Incarico/Appartenenza/Iscrizione) ---
+Utente "1..*" -- "0..*" Hackathon : incarico
+(Utente, Hackathon) .. Incarico
+Utente "1" -- "0..1" Team : appartenenza
+(Utente, Team) .. Appartenenza
+Team "0..*" -- "0..*" Hackathon : iscrizione
+(Team, Hackathon) .. Iscrizione
+
+' --- Catena del valore (contiene/riceve = COMPOSIZIONI, come iter.3) ---
+Iscrizione "1" *-- "0..1" Sottomissione : contiene
+Valutazione "1" *-- "0..1" Sottomissione : riceve
+Utente "1" -- "0..*" Valutazione : redige
+
+' --- State: Context + generalizzazione ---
+Hackathon "0..*" --> "1" Stato : stato corrente
+Stato <|-- InIscrizione
+Stato <|-- InCorso
+Stato <|-- InValutazione
+Stato <|-- Concluso
+
+' --- Vincitore ---
+Hackathon "0..*" --> "0..1" Team : vincitore
+
+' --- Inviti ---
+Team "1" -- "0..*" Invito : inviti
+Invito "0..*" --> "1" Utente : invitato
+
+' --- Observer (payload generalizzato a Notifica) ---
+Subject <|.. ServiceNotifiche
+Observer <|.. Utente
+Subject o-- "0..*" Observer : osservatori
+Notifica <|.. Invito
+Notifica <|.. RichiestaSupporto
+Notifica <|.. PropostaCall
+Notifica <|.. Segnalazione
+
+' --- Adapter: Calendar (iter.3) + Sistema di Pagamento (iter.4) ---
+CalendarGateway <|.. AdapterCalendar
+AdapterCalendar "1" --> "1" Calendar : adaptee
+PaymentGateway <|.. AdapterPagamento
+AdapterPagamento "1" --> "1" SistemaPagamento : adaptee
+
+' --- Mentoring: associazioni navigabili (UC11-UC15) ---
+RichiestaSupporto "0..*" --> "1" Team : richiedente
+RichiestaSupporto "0..*" --> "1" Hackathon : contesto
+PropostaCall "0..*" --> "1" Team : destinatario
+PropostaCall "0..*" --> "1" Utente : proponente
+PropostaCall "0..*" --> "0..1" RichiestaSupporto : risposta
+
+' --- Pagamento (UC16) ---
+Pagamento "0..*" --> "1" Hackathon : premio
+Pagamento "0..*" --> "1" Team : beneficiario
+
+' --- Segnalazione (UC17/UC18) ---
+Segnalazione "0..*" --> "1" Utente : segnalante
+Segnalazione "0..*" --> "1" Team : segnalato
+Segnalazione "0..*" --> "1" Hackathon : contesto
+
+' --- Dipendenze verso le enum ---
+Incarico ..> RuoloStaff : <<use>>
+Invito ..> StatoInvito : <<use>>
+RichiestaSupporto ..> StatoRichiesta : <<use>>
+PropostaCall ..> StatoCall : <<use>>
+Pagamento ..> StatoPagamento : <<use>>
+Segnalazione ..> StatoSegnalazione : <<use>>
+
+' --- EBC: Handler ..> service («use») ---
+HandlerCreaTeam ..> ServiceTeam : <<use>>
+HandlerCreaHackathon ..> ServiceHackathon : <<use>>
+HandlerAvviaHackathon ..> ServiceHackathon : <<use>>
+HandlerIniziaFaseValutazione ..> ServiceHackathon : <<use>>
+HandlerProclamaVincitore ..> ServiceHackathon : <<use>>
+HandlerIscrizione ..> ServiceIscrizione : <<use>>
+HandlerSottomissione ..> ServiceSottomissione : <<use>>
+HandlerValutazione ..> ServiceValutazione : <<use>>
+HandlerInvitaMembro ..> ServiceInvito : <<use>>
+HandlerAccettaInvito ..> ServiceInvito : <<use>>
+HandlerRichiedeSupporto ..> ServiceSupporto : <<use>>
+HandlerVisualizzaRichieste ..> ServiceSupporto : <<use>>
+HandlerProponeCall ..> ServiceCall : <<use>>
+HandlerAccettaCall ..> ServiceCall : <<use>>
+HandlerRifiutaCall ..> ServiceCall : <<use>>
+HandlerPagaMontepremi ..> ServicePagamento : <<use>>
+HandlerSegnalaTeam ..> ServiceSegnalazione : <<use>>
+HandlerGestisciSegnalazione ..> ServiceSegnalazione : <<use>>
+HandlerRegistrazione ..> ServiceAccount : <<use>>
+HandlerAutenticazione ..> ServiceAccount : <<use>>
+HandlerAccediInformazioniPubbliche ..> ServiceHackathon : <<use>>
+HandlerAggiungiMentore ..> ServiceHackathon : <<use>>
+
+' --- service ..> Repository («use») ---
+ServiceTeam ..> RepoTeam : <<use>>
+ServiceTeam ..> RepoUtente : <<use>>
+ServiceHackathon ..> RepoHackathon : <<use>>
+ServiceHackathon ..> RepoSottomissione : <<use>>
+ServiceIscrizione ..> RepoIscrizione : <<use>>
+ServiceSottomissione ..> RepoSottomissione : <<use>>
+ServiceValutazione ..> RepoSottomissione : <<use>>
+ServiceValutazione ..> RepoValutazione : <<use>>
+ServiceInvito ..> RepoInvito : <<use>>
+ServiceInvito ..> RepoUtente : <<use>>
+ServiceInvito ..> RepoTeam : <<use>>
+ServiceInvito ..> RepoIscrizione : <<use>>
+ServiceSupporto ..> RepoRichiestaSupporto : <<use>>
+ServiceSupporto ..> RepoIscrizione : <<use>>
+ServiceCall ..> RepoPropostaCall : <<use>>
+ServicePagamento ..> RepoPagamento : <<use>>
+ServicePagamento ..> RepoHackathon : <<use>>
+ServiceSegnalazione ..> RepoSegnalazione : <<use>>
+ServiceAccount ..> RepoUtente : <<use>>
+
+' --- service ..> Entity / Observer / Adapter («use») ---
+ServiceHackathon ..> Hackathon : <<use>>
+ServiceHackathon ..> Incarico : <<use>>
+ServiceTeam ..> Team : <<use>>
+ServiceIscrizione ..> Hackathon : <<use>>
+ServiceSottomissione ..> Iscrizione : <<use>>
+ServiceValutazione ..> Sottomissione : <<use>>
+ServiceInvito ..> Invito : <<use>>
+ServiceInvito ..> Team : <<use>>
+ServiceInvito ..> ServiceNotifiche : <<use>>
+ServiceSupporto ..> RichiestaSupporto : <<use>>
+ServiceSupporto ..> ServiceNotifiche : <<use>>
+ServiceCall ..> PropostaCall : <<use>>
+ServiceCall ..> RichiestaSupporto : <<use>>
+ServiceCall ..> Team : <<use>>
+ServiceCall ..> Hackathon : <<use>>
+ServiceCall ..> Incarico : <<use>>
+ServiceCall ..> CalendarGateway : <<use>>
+ServiceCall ..> ServiceNotifiche : <<use>>
+ServicePagamento ..> Pagamento : <<use>>
+ServicePagamento ..> Hackathon : <<use>>
+ServicePagamento ..> Team : <<use>>
+ServicePagamento ..> PaymentGateway : <<use>>
+ServiceSegnalazione ..> Segnalazione : <<use>>
+ServiceSegnalazione ..> Hackathon : <<use>>
+ServiceSegnalazione ..> Incarico : <<use>>
+ServiceSegnalazione ..> ServiceNotifiche : <<use>>
+ServiceAccount ..> Utente : <<use>>
+
+@enduml
