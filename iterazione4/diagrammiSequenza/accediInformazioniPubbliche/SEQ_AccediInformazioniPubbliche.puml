@@ -1,0 +1,41 @@
+@startuml SEQ_AccediInformazioniPubbliche
+' Diagramma di sequenza — realizzazione di UC21 Accedi a informazioni pubbliche (4a iterazione HackHub). Bozza (CHANGE).
+' Sola lettura, accesso libero (nessuna autenticazione): unico UC dell'attore Visitatore senza login.
+' GRASP: Information Expert / Controller (riuso GestoreHackathon), Pure Fabrication (RepoHackathon).
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Accedi a informazioni pubbliche (UC21)
+
+actor "Visitatore" as Vis
+boundary "PaginaInformazioniPubbliche" as B
+control "GestoreHackathon" as GH
+participant "RepoHackathon" as RH <<pure fabrication>>
+
+Vis -> B : consultaHackathon()
+activate B
+B -> GH : hackathonPubblici()
+activate GH
+GH -> RH : tutti()
+RH --> GH : elenco
+GH --> B : elenco (informazioni pubbliche)
+deactivate GH
+
+alt nessun hackathon (UC21 2a)
+    B --> Vis : elenco vuoto
+else almeno un hackathon
+    B --> Vis : mostra info pubbliche (nome, date, luogo, regolamento, premio, stato)
+end
+deactivate B
+
+note over GH, RH
+  Sola lettura (nessun cambiamento di stato), accesso libero: nessuna autenticazione richiesta.
+  Riuso del control GestoreHackathon. SOLO le informazioni pubbliche: sottomissioni/valutazioni e
+  dati riservati restano accessibili solo allo staff assegnato (progetto.MD, Membro dello Staff).
+end note
+note over Vis, B
+  3a: se il Visitatore tenta un'azione riservata (es. iscrivere un team) → richiesta di registrazione/accesso (UC19/UC20).
+end note
+@enduml
