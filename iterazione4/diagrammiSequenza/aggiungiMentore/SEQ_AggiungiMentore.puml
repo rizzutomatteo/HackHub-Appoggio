@@ -1,0 +1,66 @@
+@startuml SEQ_AggiungiMentore
+' Diagramma di sequenza — realizzazione di UC22 Aggiungi Mentore (4a iterazione HackHub). Bozza (CHANGE).
+' GRASP: Controller (riuso GestoreHackathon), Creator (l'Hackathon crea l'Incarico, riuso di assegnaStaff),
+'   Information Expert (l'Hackathon conosce staff e stato), Pure Fabrication (RepoHackathon).
+' Nessuna nuova entita': si riusa Incarico (ruolo = Mentore). Gli Incarico sono parte dell'aggregato Hackathon
+'   (persistiti via RepoHackathon: niente RepoIncarico dedicato).
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Aggiungi Mentore (UC22)
+
+actor "Organizzatore" as Org
+boundary "PaginaAggiungiMentore" as B
+control "GestoreHackathon" as GH
+participant "RepoHackathon" as RH <<pure fabrication>>
+entity "h : Hackathon" as H
+
+Org -> B : aggiungiMentore(hackathon)
+activate B
+B --> Org : mostra utenti assegnabili
+Org -> B : seleziona utente, conferma
+B -> GH : aggiungiMentore(organizzatore, hackathon, utente)
+activate GH
+GH -> GH : organizzatoreAssegnato(organizzatore, hackathon)
+
+alt non Organizzatore assegnato all'hackathon (UC22 1a)
+    GH --> B : non autorizzato
+    B --> Org : solo l'Organizzatore assegnato puo' aggiungere Mentori
+else Organizzatore assegnato (Incarico, ruolo = Organizzatore)
+    GH -> H : aggiungiMentore(utente)
+    activate H
+    alt hackathon Concluso (UC22 3b)
+        H --> GH : rifiutato (concluso)
+        deactivate H
+        GH --> B : hackathon concluso
+        B --> Org : non si modifica lo staff di un hackathon concluso
+    else utente gia' Mentore dell'hackathon (UC22 3a)
+        H --> GH : rifiutato (duplicato)
+        deactivate H
+        GH --> B : duplicato
+        B --> Org : utente gia' Mentore di questo hackathon
+    else aggiunta consentita
+        create entity "inc : Incarico" as Inc
+        H -> Inc : <<crea>>(utente, ruolo = Mentore)
+        H --> GH : inc
+        deactivate H
+        GH -> RH : salva(hackathon)
+        GH --> B : esito positivo
+        B --> Org : Mentore aggiunto (abilitato a UC12/UC13/UC17)
+    end
+end
+deactivate GH
+deactivate B
+
+note over H
+  Information Expert + Creator (riuso di assegnaStaff): l'Hackathon conosce il proprio stato e lo staff;
+  fa rispettare le invarianti (non Concluso; nessun Incarico Mentore duplicato per lo stesso utente) e
+  crea l'Incarico (ruolo = Mentore). Vincolo di staff invariato: 1 Organizzatore, 1 Giudice, 1..* Mentori.
+end note
+note over Org, B
+  *a: in qualunque momento l'Organizzatore annulla; nessun incarico creato. 3a: jump al passo 2.
+  Auth (precondizione, stub): Organizzatore corrente. Gli Incarico si persistono via RepoHackathon (aggregato).
+end note
+@enduml
