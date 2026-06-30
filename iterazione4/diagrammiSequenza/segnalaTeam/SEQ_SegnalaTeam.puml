@@ -1,0 +1,66 @@
+@startuml SEQ_SegnalaTeam
+' Diagramma di sequenza — realizzazione di UC17 Segnala Team (4a iterazione HackHub). Bozza (CHANGE).
+' Pattern Observer (RIUSO iter.2/3): ServizioNotifiche (Subject) notifica l'Organizzatore (Observer) della segnalazione;
+'   Segnalazione e' un nuovo tipo di Notifica (payload generalizzato introdotto in iter.3).
+' GRASP: Controller (GestoreSegnalazione), Creator (crea Segnalazione), Information Expert (scope via Incarico),
+'   Pure Fabrication (RepoSegnalazione). Segnalazione.stato e' un enum (Aperta/Gestita/Archiviata), NON un pattern State.
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Segnala Team (UC17)
+
+actor "Mentore" as Men
+boundary "PaginaSegnalaTeam" as B
+control "GestoreSegnalazione" as GS
+participant "RepoSegnalazione" as RSeg <<pure fabrication>>
+participant "ServizioNotifiche" as SN <<subject>>
+entity "org : Utente" as OrgU
+
+Men -> B : segnalaTeam(team, hackathon)
+activate B
+B --> Men : mostra modulo (descrizione violazione)
+Men -> B : inserisci descrizione, conferma
+B -> GS : segnala(mentore, team, hackathon, descrizione)
+activate GS
+GS -> GS : mentoreAssegnato(mentore, hackathon)
+
+alt Mentore non assegnato all'hackathon (UC17 1a)
+    GS --> B : fuori competenza
+    B --> Men : segnalazione non consentita (non sei Mentore di questo hackathon)
+else Mentore assegnato (Incarico, ruolo = Mentore)
+    GS -> RSeg : esisteSegnalazioneAperta(mentore, team, hackathon)
+    RSeg --> GS : esito
+    alt esiste gia' una segnalazione aperta (UC17 3a)
+        GS --> B : duplicato
+        B --> Men : segnalazione gia' presente per questo team
+    else nessuna segnalazione aperta
+        create entity "seg : Segnalazione" as Seg
+        GS -> Seg : <<crea>>(mentore, team, hackathon, descrizione, stato = Aperta)
+        GS -> RSeg : salva(seg)
+        GS -> SN : notifica(seg)
+        activate SN
+        SN -> OrgU : aggiorna(seg)
+        deactivate SN
+        GS --> B : esito positivo
+        B --> Men : segnalazione inviata (Organizzatore avvisato)
+    end
+end
+deactivate GS
+deactivate B
+
+note over SN, OrgU
+  Pattern Observer (riuso iter.2/3): ServizioNotifiche (Subject) notifica gli Utente osservatori;
+  qui l'Organizzatore dell'hackathon (Observer) riceve l'avviso della nuova segnalazione, che
+  trattera' in UC18. Segnalazione realizza Notifica (payload generalizzato, iter.3).
+end note
+note over GS, RSeg
+  Information Expert / scope via Incarico: il Mentore puo' segnalare SOLO i team degli hackathon
+  a cui e' assegnato (Incarico, ruolo = Mentore). mentoreAssegnato e' una verifica interna del control.
+end note
+note over Men, B
+  *a: in qualunque momento il Mentore puo' annullare; nessuna segnalazione creata.
+  3a: jump al passo 2 (evita il duplicato). Auth (precondizione, stub): Mentore corrente.
+end note
+@enduml
