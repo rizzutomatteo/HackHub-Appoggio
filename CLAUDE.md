@@ -151,6 +151,17 @@ date/ore spalmate in un intervallo, segui il playbook qui sotto.
 
 @./commit-spalmati-howto.md
 
+### Convenzioni dei messaggi di commit
+
+**Non includere mai la specifica del caso d'uso tra parentesi** nel messaggio di
+commit (né `UCxx`, né intervalli/liste come `UC06-UC08` o `UC09/UC10`). Descrivi
+cosa fa la modifica, senza appendere il riferimento al caso d'uso tra parentesi.
+
+- ❌ `feat(boundary): aggiunge HandlerAccettaInvito (UC10)`
+- ❌ `feat(service): estende ServiceHackathon con avvio, valutazione e proclamazione (UC06-UC08)`
+- ✅ `feat(boundary): aggiunge HandlerAccettaInvito`
+- ✅ `feat(service): estende ServiceHackathon con avvio, valutazione e proclamazione`
+
 ### Repo del codice indipendente
 
 La cartella `iterazione1/codice/` è anche un **secondo repo Git indipendente** (per il
