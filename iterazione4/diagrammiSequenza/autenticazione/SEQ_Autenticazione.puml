@@ -1,0 +1,47 @@
+@startuml SEQ_Autenticazione
+' Diagramma di sequenza — realizzazione di UC20 Autenticazione (4a iterazione HackHub). Bozza (CHANGE).
+' GRASP: Controller (GestoreAccount verifica le credenziali), Information Expert (RepoUtente.trovaPerEmail).
+' Autenticazione "sottile" (D4): accesso minimale; niente sessioni/token robusti o logout (fuori scope, §4.5).
+' Rende reale l'"utente corrente" trattato come stub nelle iter.1-3. Presuppone UC19 (utente registrato).
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Autenticazione (UC20)
+
+actor "Visitatore" as Vis
+boundary "PaginaAccesso" as B
+control "GestoreAccount" as GA
+participant "RepoUtente" as RU <<pure fabrication>>
+
+Vis -> B : accedi()
+activate B
+B --> Vis : mostra modulo (email, password)
+Vis -> B : inserisci credenziali, conferma
+B -> GA : autentica(email, password)
+activate GA
+GA -> RU : trovaPerEmail(email)
+RU --> GA : utente
+GA -> GA : verificaCredenziali(utente, password)
+
+alt credenziali non valide (UC20 4a)
+    GA --> B : accesso negato
+    B --> Vis : credenziali non valide
+else credenziali valide
+    GA --> B : utente autenticato
+    B --> Vis : accesso effettuato (sei l'utente corrente)
+end
+deactivate GA
+deactivate B
+
+note over GA, RU
+  Verifica "sottile" (D4): trovaPerEmail recupera l'Utente (o nessuno); verificaCredenziali controlla
+  esistenza + password SENZA distinguere quale campo e' errato (UC20 4a). Email univoca = identita'.
+  Niente sessioni/token robusti, logout, ruoli a runtime (fuori scope, §4.5).
+end note
+note over Vis, B
+  4a: jump al passo 2 (re-inserimento). *a: in qualunque momento il Visitatore annulla; nessuna sessione aperta.
+  Presuppone UC19: l'utente dev'essere registrato. Dopo l'accesso l'"utente corrente" e' reale (non piu' stub).
+end note
+@enduml
