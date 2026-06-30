@@ -1,28 +1,32 @@
 @startuml CLASSI_PROGETTO_CHANGE
-' DIAGRAMMA CLASSI DI PROGETTAZIONE - HackHub, 3a iterazione (modello cumulativo iter.1+2+3).
-' Derivato dai diagrammi di sequenza UC11-UC15 (iterazione3/diagrammiSequenza/*) e coerente con:
-'   - iterazione2/progetto/CLASSI_PROGETTO_CHANGE2.puml (riferimento "fatto bene");
-'   - CONVENZIONI_DIAGRAMMI.md (stereotipi, naming misto control, classi-associazione MANTENUTE);
-'   - iterazione3/analisi/CLASSI_ANALISI_CHANGE_REALIZZATI.puml e useCase/CASI_USO_DETTAGLIATI_REALIZZATI.md.
-'
-' Delta 3a iterazione (catena del mentoring, UC11-UC15) - innestato nello stesso stile:
-'   - Boundary per-UC: HandlerRichiedeSupporto/VisualizzaRichieste/ProponeCall/AccettaCall/RifiutaCall.
-'   - Control: GestoreSupporto (UC11/12), GestoreCall (UC13/14/15).
-'   - Entita': RichiestaSupporto (+enum StatoRichiesta), PropostaCall (+enum StatoCall).
-'   - Persistenza: RepoRichiestaSupporto, RepoPropostaCall; RepoIscrizione.iscrizioneInCorso (nuovo metodo).
-'   - Pattern ADAPTER (terza famiglia): porta CalendarGateway (interface) + AdapterCalendar (concreto)
-'     che isola il sistema esterno Calendar (Adaptee). I service usano SOLO la porta (DIP).
-'   - Pattern OBSERVER (riuso iter.2) GENERALIZZATO: il payload diventa la marker-interface Notifica
-'     (realizzata da Invito, RichiestaSupporto, PropostaCall) cosi' notifica()/aggiorna() servono tutte
-'     le notifiche (inviti + mentoring). In iter.2 il payload era il solo Invito.
-'   - Pattern STATE invariato: resta sul solo Hackathon (gli stati delle entita' iter.2/3 sono enum - D2).
-' NB: layout ELK per azzerare gli incroci; la DISPOSIZIONE finale va rifinita in Visual Paradigm.
+' ============================================================================
+' TRASCRIZIONE FEDELE (GEMELLO ESATTO) di CLASSI_PROGETTO_REALIZZATI.jpg
+' ============================================================================
+' Questo .puml e' la trascrizione testuale, 1:1, del deliverable
+' iterazione3/progetto/CLASSI_PROGETTO_REALIZZATI.jpg (esportato da Visual
+' Paradigm). Ogni classe, stereotipo, attributo, operazione (visibilita',
+' tipi dei parametri, tipo di ritorno), enum, interfaccia e relazione
+' (tipo, molteplicita', ruolo, verso) corrisponde a cio' che e' DISEGNATO
+' nel JPG. Sono replicate anche le quirk di Visual Paradigm:
+'   - control denominati tutti "Service*" (niente "Gestore*"/"Servizio*");
+'   - ServiceNotifiche e' un control «service» (non un'interfaccia/altro);
+'   - RepoTeam.salva ha il parametro SENZA nome, reso da VP come "parameter";
+'   - RepoHackathon e' un box «Repository» SENZA metodi (compartimento vuoto);
+'   - stati (Stato astratto + 4 concreti) marcati con lo stereotipo «Stato»;
+'   - stereotipo delle interfacce reso «Interface» (I maiuscola), come in VP;
+'   - casing misto String/string, list/List<Utente>, ritorni void;
+'   - "contiene" e "riceve" disegnate come COMPOSIZIONI (rombo pieno);
+'   - NESSUNA legenda nel diagramma (di conseguenza qui non c'e' blocco legend).
+' Le DIFFERENZE rispetto alla versione precedente del .puml sono state
+' applicate tutte per far combaciare il testo con l'immagine.
+' NB: layout ELK (azzera gli incroci); la DISPOSIZIONE/posizioni finali sono
+' quelle del modello Visual Paradigm, non riproducibili in PlantUML.
 !pragma layout elk
 hide empty members
 hide circle
 
 ' =========================================================
-' Boundary «Handler» (per-UC, come iter-1/2)
+' Boundary «Handler» (per-UC)
 ' =========================================================
 class HandlerCreaTeam <<Handler>> {
   + nuovoTeam() : void
@@ -30,7 +34,7 @@ class HandlerCreaTeam <<Handler>> {
 }
 class HandlerCreaHackathon <<Handler>> {
   + nuovoHackathon() : void
-  + inserisceDati(nome : string, dataInizio : Date, dataFine : Date, luogo : string, regolamento : string, scadenzaIscrizioni : Date, dimensioneMaxTeam : int, montepremi : long, giudice : Utente, mentori : List<Utente>) : void
+  + inserisceDati(nome : string, dataInizio : Date, dataFine : Date, luogo : String, regolamento : string, scadenzaIscrizioni : Date, dimensioneMaxTeam : int, montepremi : long, giudice : Utente, mentori : List<Utente>) : void
 }
 class HandlerAvviaHackathon <<Handler>> {
   + avviaHackathon(hackathon : Hackathon) : void
@@ -81,17 +85,17 @@ class HandlerRifiutaCall <<Handler>> {
 }
 
 ' =========================================================
-' Control «service» (naming MISTO storico: Gestore* / Service* - CONVENZIONI 2.3)
+' Control «service» (tutti "Service*" - come nel JPG)
 ' =========================================================
-class GestoreTeam <<service>> {
+class ServiceTeam <<service>> {
   + iniziaCreazioneTeam(utente : Utente) : boolean
   + creaTeam(nome : string) : boolean
 }
-class GestoreHackathon <<service>> {
-  + creaHackathon(nome : string, dataInizio : Date, dataFine : Date, luogo : string, regolamento : string, scadenzaIscrizioni : Date, dimensioneMaxTeam : int, montepremi : long, giudice : Utente, mentori : List<Utente>) : boolean
+class ServiceHackathon <<service>> {
+  + creaHackathon(nome : string, dataInizio : Date, dataFine : Date, luogo : String, regolamento : string, scadenzaIscrizioni : Date, dimensioneMaxTeam : int, montepremi : long, giudice : Utente, mentori : List<Utente>) : boolean
   + avvia(hackathon : Hackathon) : boolean
   + iniziaFaseValutazione(hackathon : Hackathon) : boolean
-  + preparaProclamazione(hackathon : Hackathon) : List<Sottomissione>
+  + preparaProclamazione() : List<Sottomissione>
   + proclamaVincitore(hackathon : Hackathon, teamVincitore : Team) : boolean
 }
 class ServiceIscrizione <<service>> {
@@ -106,44 +110,44 @@ class ServiceValutazione <<service>> {
   + dettagli(sub : Sottomissione) : Sottomissione
   + valuta(sub : Sottomissione, giudizio : string, punteggio : int) : boolean
 }
-class GestoreInvito <<service>> {
+class ServiceInvito <<service>> {
   + invita(team : Team, utenteInvitato : Utente) : boolean
   + accetta(invito : Invito) : boolean
 }
-class GestoreSupporto <<service>> {
+class ServiceSupporto <<service>> {
   + richiediSupporto(team : Team, hackathon : Hackathon, messaggio : string) : boolean
   + richiesteDelMentore(mentore : Utente) : List<RichiestaSupporto>
 }
-class GestoreCall <<service>> {
+class ServiceCall <<service>> {
   + proponiCall(mentore : Utente, richiesta : RichiestaSupporto, slot : dateTime) : boolean
   + accettaProposta(proposta : PropostaCall) : boolean
   + rifiutaProposta(proposta : PropostaCall) : boolean
   - mentoreAssegnato(mentore : Utente, richiesta : RichiestaSupporto) : boolean
 }
-
-' =========================================================
-' Pattern OBSERVER (riuso iter.2, payload generalizzato a Notifica) - GoF comportamentale
-' =========================================================
-interface Subject <<interface>> {
+class ServiceNotifiche <<service>> {
   + registra(o : Observer) : void
   + rimuovi(o : Observer) : void
   + notifica(n : Notifica) : void
 }
-interface Observer <<interface>> {
+
+' =========================================================
+' Pattern OBSERVER (interfacce - pacchetto "Observer")
+' =========================================================
+interface Subject <<Interface>> {
+  + registra(o : Observer) : void
+  + rimuovi(o : Observer) : void
+  + notifica(n : Notifica) : void
+}
+interface Observer <<Interface>> {
   + aggiorna(n : Notifica) : void
 }
-interface Notifica <<interface>> {
-}
-class ServizioNotifiche <<service>> {
-  + registra(o : Observer) : void
-  + rimuovi(o : Observer) : void
-  + notifica(n : Notifica) : void
+interface Notifica <<Interface>> {
 }
 
 ' =========================================================
-' Pattern ADAPTER (delta iter.3) - GoF strutturale - isola il sistema esterno Calendar
+' Pattern ADAPTER (pacchetto "Calendar")
 ' =========================================================
-interface CalendarGateway <<interface>> {
+interface CalendarGateway <<Interface>> {
   + riservaSlot(slot : dateTime) : string
   + confermaPrenotazione(proposta : PropostaCall) : boolean
 }
@@ -168,7 +172,6 @@ class Team <<Entity>> {
   - nome : string
   + numeroMembri() : int
   + aggiungiMembro(utente : Utente) : Appartenenza
-  + dimensioneCompatibile(dimensioneMax : int) : boolean
 }
 class Appartenenza <<Entity>> {
   - amministratore : boolean
@@ -183,18 +186,15 @@ class Hackathon <<Entity>> {
   - montepremi : long
   - dimensioneMaxTeam : int
   - stato : Stato
-  + assegnaStaff(organizzatore : Utente, giudice : Utente, mentori : List<Utente>) : void
+  + assegnaStaff(organizzatore : Utente, giudice : Utente, mentori : list<Utente>) : void
   + iscrivibile(team : Team) : boolean
   - verificaDimensione(team : Team) : boolean
-  + creaIscrizione(team : Team) : Iscrizione
   + iscrizioneConsentita() : boolean
   + sottomissioneConsentita() : boolean
   + valutazioneConsentita() : boolean
   + avvia() : boolean
   + iniziaFaseValutazione() : boolean
   + proclamaVincitore(teamVincitore : Team) : boolean
-  - scadenzaIscrizioniRaggiunta() : boolean
-  - dataFineRaggiunta() : boolean
 }
 class Incarico <<Entity>> {
   - ruolo : RuoloStaff
@@ -233,9 +233,9 @@ class PropostaCall <<Entity>> {
 }
 
 ' =========================================================
-' Pattern STATE - guardie + transizioni (iter.1/2) - invariato in iter.3
+' Pattern STATE (pacchetto "Stato") - stereotipo «Stato»
 ' =========================================================
-abstract class Stato {
+abstract class Stato <<Stato>> {
   + iscrizioneConsentita() : boolean
   + sottomissioneConsentita() : boolean
   + valutazioneConsentita() : boolean
@@ -243,17 +243,17 @@ abstract class Stato {
   + iniziaValutazione() : Stato
   + concludi() : Stato
 }
-class InIscrizione {
+class InIscrizione <<Stato>> {
 }
-class InCorso {
+class InCorso <<Stato>> {
 }
-class InValutazione {
+class InValutazione <<Stato>> {
 }
-class Concluso {
+class Concluso <<Stato>> {
 }
 
 ' =========================================================
-' Enumerazioni «enumeration»
+' Enumerazioni «enumeration» (pacchetto "Enumerazioni")
 ' =========================================================
 enum RuoloStaff <<enumeration>> {
   Organizzatore
@@ -277,23 +277,21 @@ enum StatoCall <<enumeration>> {
 }
 
 ' =========================================================
-' Repository «Repository» (solo i service vi accedono)
+' Repository «Repository» (pacchetto "Repository")
 ' =========================================================
 class RepoTeam <<Repository>> {
   + esisteNome(nome : string) : boolean
-  + salva(t : Team) : void
+  + salva(parameter) : void
 }
 class RepoUtente <<Repository>> {
   + appartieneAdUnTeam(u : Utente) : boolean
 }
 class RepoHackathon <<Repository>> {
-  + salva(h : Hackathon) : void
 }
 class RepoIscrizione <<Repository>> {
   + esisteIscrizione(team : Team, hackathon : Hackathon) : boolean
-  + iscrizioniDi(team : Team) : List<Iscrizione>
-  + iscrizioneInCorso(team : Team, hackathon : Hackathon) : boolean
   + salva(i : Iscrizione) : void
+  + iscrizioneInCorso(team : Team, hackathon : Hackathon) : boolean
 }
 class RepoSottomissione <<Repository>> {
   + salva(sub : Sottomissione) : void
@@ -320,17 +318,17 @@ class RepoPropostaCall <<Repository>> {
 ' RELAZIONI
 ' =========================================================
 
-' --- Dominio: classi-associazione MANTENUTE (CONVENZIONI 2.4/2.7) ---
+' --- Dominio: classi-associazione (Incarico/Appartenenza/Iscrizione) ---
 Utente "1..*" -- "0..*" Hackathon : incarico
 (Utente, Hackathon) .. Incarico
-Utente "1..*" -- "0..1" Team : appartenenza
+Utente "1" -- "0..1" Team : appartenenza
 (Utente, Team) .. Appartenenza
 Team "0..*" -- "0..*" Hackathon : iscrizione
 (Team, Hackathon) .. Iscrizione
 
-' --- Catena del valore ---
-Iscrizione "1" -- "0..1" Sottomissione : contiene
-Sottomissione "1" -- "0..1" Valutazione : riceve
+' --- Catena del valore (contiene/riceve = COMPOSIZIONI nel JPG) ---
+Iscrizione "1" *-- "0..1" Sottomissione : contiene
+Valutazione "1" *-- "0..1" Sottomissione : riceve
 Utente "1" -- "0..*" Valutazione : redige
 
 ' --- State: Context + generalizzazione ---
@@ -340,31 +338,31 @@ Stato <|-- InCorso
 Stato <|-- InValutazione
 Stato <|-- Concluso
 
-' --- Vincitore (iter.2) ---
+' --- Vincitore ---
 Hackathon "0..*" --> "0..1" Team : vincitore
 
-' --- Inviti (iter.2) ---
+' --- Inviti ---
 Team "1" -- "0..*" Invito : inviti
 Invito "0..*" --> "1" Utente : invitato
 
-' --- Observer (iter.2, payload generalizzato in iter.3) ---
-Subject <|.. ServizioNotifiche
+' --- Observer (payload generalizzato a Notifica) ---
+Subject <|.. ServiceNotifiche
 Observer <|.. Utente
 Subject o-- "0..*" Observer : osservatori
 Notifica <|.. Invito
 Notifica <|.. RichiestaSupporto
 Notifica <|.. PropostaCall
 
-' --- Adapter (iter.3): porta realizzata dall'adapter, che incapsula l'Adaptee esterno ---
+' --- Adapter: porta realizzata dall'adapter, che incapsula l'Adaptee esterno ---
 CalendarGateway <|.. AdapterCalendar
-AdapterCalendar --> "1" Calendar : adaptee
+AdapterCalendar "1" --> "1" Calendar : adaptee
 
-' --- Mentoring (iter.3): associazioni navigabili (UC11-UC15) ---
+' --- Mentoring: associazioni navigabili (UC11-UC15) ---
 RichiestaSupporto "0..*" --> "1" Team : richiedente
 RichiestaSupporto "0..*" --> "1" Hackathon : contesto
 PropostaCall "0..*" --> "1" Team : destinatario
 PropostaCall "0..*" --> "1" Utente : proponente
-PropostaCall "0..*" --> "0..1" RichiestaSupporto : in risposta a
+PropostaCall "0..*" --> "0..1" RichiestaSupporto : risposta
 
 ' --- Dipendenze verso le enum ---
 Incarico ..> RuoloStaff : <<use>>
@@ -373,100 +371,56 @@ RichiestaSupporto ..> StatoRichiesta : <<use>>
 PropostaCall ..> StatoCall : <<use>>
 
 ' --- EBC: Handler ..> service («use») ---
-HandlerCreaTeam ..> GestoreTeam : <<use>>
-HandlerCreaHackathon ..> GestoreHackathon : <<use>>
-HandlerAvviaHackathon ..> GestoreHackathon : <<use>>
-HandlerIniziaFaseValutazione ..> GestoreHackathon : <<use>>
-HandlerProclamaVincitore ..> GestoreHackathon : <<use>>
+HandlerCreaTeam ..> ServiceTeam : <<use>>
+HandlerCreaHackathon ..> ServiceHackathon : <<use>>
+HandlerAvviaHackathon ..> ServiceHackathon : <<use>>
+HandlerIniziaFaseValutazione ..> ServiceHackathon : <<use>>
+HandlerProclamaVincitore ..> ServiceHackathon : <<use>>
 HandlerIscrizione ..> ServiceIscrizione : <<use>>
 HandlerSottomissione ..> ServiceSottomissione : <<use>>
 HandlerValutazione ..> ServiceValutazione : <<use>>
-HandlerInvitaMembro ..> GestoreInvito : <<use>>
-HandlerAccettaInvito ..> GestoreInvito : <<use>>
-HandlerRichiedeSupporto ..> GestoreSupporto : <<use>>
-HandlerVisualizzaRichieste ..> GestoreSupporto : <<use>>
-HandlerProponeCall ..> GestoreCall : <<use>>
-HandlerAccettaCall ..> GestoreCall : <<use>>
-HandlerRifiutaCall ..> GestoreCall : <<use>>
+HandlerInvitaMembro ..> ServiceInvito : <<use>>
+HandlerAccettaInvito ..> ServiceInvito : <<use>>
+HandlerRichiedeSupporto ..> ServiceSupporto : <<use>>
+HandlerVisualizzaRichieste ..> ServiceSupporto : <<use>>
+HandlerProponeCall ..> ServiceCall : <<use>>
+HandlerAccettaCall ..> ServiceCall : <<use>>
+HandlerRifiutaCall ..> ServiceCall : <<use>>
 
 ' --- service ..> Repository («use») ---
-GestoreTeam ..> RepoTeam : <<use>>
-GestoreTeam ..> RepoUtente : <<use>>
-GestoreHackathon ..> RepoHackathon : <<use>>
-GestoreHackathon ..> RepoSottomissione : <<use>>
+ServiceTeam ..> RepoTeam : <<use>>
+ServiceTeam ..> RepoUtente : <<use>>
+ServiceHackathon ..> RepoHackathon : <<use>>
+ServiceHackathon ..> RepoSottomissione : <<use>>
 ServiceIscrizione ..> RepoIscrizione : <<use>>
 ServiceSottomissione ..> RepoSottomissione : <<use>>
 ServiceValutazione ..> RepoSottomissione : <<use>>
 ServiceValutazione ..> RepoValutazione : <<use>>
-GestoreInvito ..> RepoInvito : <<use>>
-GestoreInvito ..> RepoUtente : <<use>>
-GestoreInvito ..> RepoTeam : <<use>>
-GestoreInvito ..> RepoIscrizione : <<use>>
-GestoreSupporto ..> RepoRichiestaSupporto : <<use>>
-GestoreSupporto ..> RepoIscrizione : <<use>>
-GestoreCall ..> RepoPropostaCall : <<use>>
+ServiceInvito ..> RepoInvito : <<use>>
+ServiceInvito ..> RepoUtente : <<use>>
+ServiceInvito ..> RepoTeam : <<use>>
+ServiceInvito ..> RepoIscrizione : <<use>>
+ServiceSupporto ..> RepoRichiestaSupporto : <<use>>
+ServiceSupporto ..> RepoIscrizione : <<use>>
+ServiceCall ..> RepoPropostaCall : <<use>>
 
 ' --- service ..> Entity / Observer / Adapter («use») ---
-GestoreHackathon ..> Hackathon : <<use>>
-GestoreTeam ..> Team : <<use>>
+ServiceHackathon ..> Hackathon : <<use>>
+ServiceTeam ..> Team : <<use>>
 ServiceIscrizione ..> Hackathon : <<use>>
 ServiceSottomissione ..> Iscrizione : <<use>>
 ServiceValutazione ..> Sottomissione : <<use>>
-GestoreInvito ..> Invito : <<use>>
-GestoreInvito ..> Team : <<use>>
-GestoreInvito ..> ServizioNotifiche : <<use>>
-GestoreSupporto ..> RichiestaSupporto : <<use>>
-GestoreSupporto ..> ServizioNotifiche : <<use>>
-GestoreCall ..> PropostaCall : <<use>>
-GestoreCall ..> RichiestaSupporto : <<use>>
-GestoreCall ..> Team : <<use>>
-GestoreCall ..> Hackathon : <<use>>
-GestoreCall ..> Incarico : <<use>>
-GestoreCall ..> CalendarGateway : <<use>>
-GestoreCall ..> ServizioNotifiche : <<use>>
-
-' =========================================================
-legend right
-  **Classi di PROGETTAZIONE - HackHub (3a iterazione, modello cumulativo iter.1+2+3).**
-  Derivato dai diagrammi di sequenza UC11-UC15; convenzioni di CONVENZIONI_DIAGRAMMI.md / iter.2 CHANGE2.
-  --
-  **Stereotipi:** «Handler» (boundary, per-UC) · «service» (control; naming misto storico Gestore*/Service*) ·
-  «Entity» (dominio) · «Repository» (persistenza, Pure Fabrication) · «enumeration» · «interface» ·
-  «adapter» (adapter concreto) · «sistema esterno» (Adaptee). Dipendenze «use»; solo i service accedono ai Repo.
-  Classi-associazione MANTENUTE (Incarico/Appartenenza/Iscrizione, non reificate); Hackathon mantiene stato : Stato.
-  --
-  **Delta 3a iterazione (catena del mentoring, UC11-UC15):**
-  Handler Richiedi/Visualizza/Propone/Accetta/Rifiuta; GestoreSupporto (UC11/12), GestoreCall (UC13/14/15);
-  entita' RichiestaSupporto (+StatoRichiesta) e PropostaCall (+StatoCall); RepoRichiestaSupporto, RepoPropostaCall;
-  RepoIscrizione.iscrizioneInCorso. Lo State NON e' coinvolto (stati = enum semplici, decisione D2).
-  --
-  **Pattern (tre famiglie):**
-  • **State** (GoF, comportamentale): Hackathon = Context (stato : Stato + assoc. "stato corrente");
-    abstract Stato con guardie + transizioni (avvia/iniziaValutazione/concludi -> nuovo Stato); 4 stati concreti.
-  • **Observer** (GoF, comportamentale; iter.2 riusato e GENERALIZZATO): Subject/Observer (interfacce);
-    ServizioNotifiche = ConcreteSubject, Utente = ConcreteObserver; payload = marker **Notifica**
-    (realizzata da Invito, RichiestaSupporto, PropostaCall) -> notifica()/aggiorna() servono inviti + mentoring.
-  • **Adapter** (GoF, strutturale; nuovo): porta **CalendarGateway** (Target) realizzata da **AdapterCalendar**
-    che incapsula l'Adaptee **Calendar** (sistema esterno). I service dipendono SOLO dalla porta (DIP);
-    Calendar e' raggiunto solo via adapter (contratto sincrono: riserva tentativa in UC13, conferma in UC14).
-  --
-  **GRASP:** Controller (service) · Creator (GestoreSupporto->RichiestaSupporto, GestoreCall->PropostaCall) ·
-  Information Expert (PropostaCall su stato; scope Mentore via Incarico) · Pure Fabrication (Repository, CalendarGateway) ·
-  Polymorphism (State; realizzazioni Observer/Adapter).
-  --
-  **Vincoli (non grafici):**
-  • Mentore: vede/agisce solo sugli hackathon a cui e' assegnato (Incarico, ruolo = Mentore) - UC12/UC13.
-  • RichiestaSupporto: aperta da un Membro di un Team iscritto, con Hackathon "in corso" (iscrizioneInCorso);
-    stato in {Aperta, Gestita, Chiusa}; al piu' una "Aperta" per (Team, Hackathon); notifica i Mentori (Observer).
-  • PropostaCall: proponente = Mentore dell'hackathon del Team destinatario; "in risposta a" 0..1 RichiestaSupporto;
-    stato in {Proposta, Accettata, Rifiutata}; riferimentoPrenotazione = id slot Calendar (delega).
-    "Proposta" => slot riservato (tentativo, UC13); "Accettata" => prenotazione confermata (UC14);
-    "Rifiutata" => nessuna prenotazione (UC15, niente Calendar).
-  • Solo l'Amministratore del Team destinatario accetta/rifiuta una PropostaCall (UC14/UC15).
-  • (iter.1/2) 1 Organizzatore + 1 Giudice + 1..* Mentori; un Utente in <=1 Team; punteggio 0..10;
-    vincitore a valutazioni complete; <=1 invito pendente per (Utente, Team).
-  --
-  NB: disposizione finale da rifinire in Visual Paradigm (questo .puml fissa nomi/convenzioni/notazione, non le posizioni).
-endlegend
+ServiceInvito ..> Invito : <<use>>
+ServiceInvito ..> Team : <<use>>
+ServiceInvito ..> ServiceNotifiche : <<use>>
+ServiceSupporto ..> RichiestaSupporto : <<use>>
+ServiceSupporto ..> ServiceNotifiche : <<use>>
+ServiceCall ..> PropostaCall : <<use>>
+ServiceCall ..> RichiestaSupporto : <<use>>
+ServiceCall ..> Team : <<use>>
+ServiceCall ..> Hackathon : <<use>>
+ServiceCall ..> Incarico : <<use>>
+ServiceCall ..> CalendarGateway : <<use>>
+ServiceCall ..> ServiceNotifiche : <<use>>
 
 @enduml
