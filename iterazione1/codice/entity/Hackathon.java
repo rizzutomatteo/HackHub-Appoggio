@@ -1,5 +1,6 @@
 package it.unicam.cs.ids.hackhub.entity;
 
+import it.unicam.cs.ids.hackhub.state.Concluso;
 import it.unicam.cs.ids.hackhub.state.InIscrizione;
 import it.unicam.cs.ids.hackhub.state.Stato;
 
@@ -48,6 +49,31 @@ public class Hackathon {
         for (Utente m : mentori) {
             staff.add(new Incarico(m, this, RuoloStaff.Mentore));
         }
+    }
+
+    // UC22: aggiunge un Mentore a un hackathon gia' creato (riuso della logica di assegnaStaff).
+    // Information Expert + Creator: l'Hackathon fa rispettare le invarianti (non "Concluso"; nessun
+    // Incarico Mentore duplicato per lo stesso utente) e crea l'Incarico (ruolo = Mentore).
+    // Restituisce l'Incarico creato, oppure null se l'aggiunta non e' consentita (3b concluso / 3a duplicato).
+    public Incarico aggiungiMentore(Utente utente) {
+        if (stato instanceof Concluso) {
+            return null;   // non si modifica lo staff di un hackathon concluso (UC22 3b)
+        }
+        if (utente == null || giaMentore(utente)) {
+            return null;   // utente gia' Mentore di questo hackathon (UC22 3a)
+        }
+        Incarico incarico = new Incarico(utente, this, RuoloStaff.Mentore);
+        staff.add(incarico);
+        return incarico;
+    }
+
+    private boolean giaMentore(Utente utente) {
+        for (Incarico inc : staff) {
+            if (inc.getRuolo() == RuoloStaff.Mentore && inc.getUtente().equals(utente)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean iscrivibile(Team team) {
