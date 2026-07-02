@@ -1,0 +1,39 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.1.0'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'it.unicam.cs.ids'
+version = '0.0.1-SNAPSHOT'
+description = 'HackHub - porting Spring Boot (UNICAM IDS)'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(25)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// Spring Boot Web MVC (REST controller, Tomcat embedded) - come da slide del corso
+	implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+
+	// Sistema esterno 1: Google Calendar (pattern Adapter -> Calendar/CalendarGateway)
+	implementation 'com.google.apis:google-api-services-calendar:v3-rev20260517-2.0.0'
+	implementation 'com.google.auth:google-auth-library-oauth2-http:1.48.0'
+	implementation 'com.google.api-client:google-api-client:2.8.0'
+
+	// Sistema esterno 2: Sistema di Pagamento - Stripe (modalita' test / API di prova)
+	implementation 'com.stripe:stripe-java:29.2.0'
+
+	testImplementation 'org.springframework.boot:spring-boot-starter-webmvc-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
