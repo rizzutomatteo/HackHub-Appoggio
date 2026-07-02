@@ -1,6 +1,8 @@
 package it.unicam.cs.ids.hackhub.service;
 
 import it.unicam.cs.ids.hackhub.entity.Hackathon;
+import it.unicam.cs.ids.hackhub.entity.Incarico;
+import it.unicam.cs.ids.hackhub.entity.RuoloStaff;
 import it.unicam.cs.ids.hackhub.entity.Sottomissione;
 import it.unicam.cs.ids.hackhub.entity.Team;
 import it.unicam.cs.ids.hackhub.entity.Utente;
@@ -113,6 +115,38 @@ public class ServiceHackathon {
         }
         repoHackathon.salva(hackathon);
         return true;
+    }
+
+    // UC21: informazioni pubbliche di tutti gli hackathon (sola lettura, accesso libero del Visitatore).
+    public List<Hackathon> hackathonPubblici() {
+        return repoHackathon.tutti();
+    }
+
+    // UC22: l'Organizzatore assegnato aggiunge un Mentore a un hackathon non "Concluso".
+    // La creazione dell'Incarico e le invarianti sono delegate all'Hackathon (Information Expert/Creator);
+    // gli Incarico sono parte dell'aggregato Hackathon e si persistono via RepoHackathon.
+    public boolean aggiungiMentore(Utente organizzatore, Hackathon hackathon, Utente utente) {
+        if (organizzatore == null || hackathon == null || utente == null) {
+            return false;
+        }
+        if (!organizzatoreAssegnato(organizzatore, hackathon)) {
+            return false;   // solo l'Organizzatore assegnato puo' modificare lo staff (UC22 1a)
+        }
+        if (hackathon.aggiungiMentore(utente) == null) {
+            return false;   // hackathon concluso (3b) o utente gia' Mentore (3a)
+        }
+        repoHackathon.salva(hackathon);
+        return true;
+    }
+
+    // Scope via Incarico (D5): l'attore deve essere assegnato (ruolo = Organizzatore) all'hackathon.
+    private boolean organizzatoreAssegnato(Utente organizzatore, Hackathon hackathon) {
+        for (Incarico inc : hackathon.getStaff()) {
+            if (inc.getRuolo() == RuoloStaff.Organizzatore && inc.getUtente().equals(organizzatore)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean tutteValutate(List<Sottomissione> sottomissioni) {
