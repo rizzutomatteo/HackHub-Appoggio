@@ -1,86 +1,72 @@
 @startuml CLASSI_ANALISI_CHANGE
-' CLASSI DI ANALISI - 4a iterazione HackHub (chiusura). Modello CUMULATIVO.
-' Estende il modello di analisi della 3a iterazione (iterazione3/analisi/CLASSI_ANALISI_CHANGE_REALIZZATI.puml)
-' con i SOLI concetti di dominio introdotti dai casi d'uso UC16-UC22:
-'   - "Pagamento": entita' (erogazione del premio al team vincitore) + enum StatoPagamento (UC16).
-'   - "Segnalazione": entita' (un Mentore segnala un Team all'Organizzatore) + enum StatoSegnalazione (UC17/UC18).
-'   - "password" su Utente: credenziale per Registrazione/Autenticazione (UC19/UC20).
-'   - UC21 (informazioni pubbliche) e UC22 (Aggiungi Mentore) NON aggiungono concetti di dominio:
-'     UC21 e' sola lettura; UC22 riusa la classe-associazione Incarico (ruolo = Mentore).
-'
-' RAZIONALE (ancorato ai materiali del corso, coerente con iter. 1-3):
-'  - Pagamento e Segnalazione sono ENTITA' di dominio (categorie "Transactions/Events/Records",
-'    UML_03 slide 19; "nel dubbio e' una classe", UML_03 slide 18): hanno identita', attributi e ciclo
-'    di vita propri. Lo stato e' un enum semplice (decisione D2: NON pattern State, che resta sul solo
-'    Hackathon) - coerente con Invito/RichiestaSupporto/PropostaCall.
-'  - Stile domain model: niente operazioni, niente visibilita', tipi omessi (UML_03 slide 13). Si mostra
-'    solo il tipo enum degli attributi di stato (es. stato : StatoPagamento), come in iter. 1-3.
-'  - NON compaiono artefatti di soluzione: il sistema esterno Sistema di Pagamento, l'Adapter PaymentGateway
-'    che lo isola e l'Observer (Subject/Observer/ServizioNotifiche, riusato per notificare le segnalazioni)
-'    sono DOMINIO DELLA SOLUZIONE (UML_07 slide 6) e vanno nel diagramma di PROGETTAZIONE, non in analisi
-'    (UML_03 slide 11: "NO a classi del dominio tecnologico della soluzione"). Simmetrico a Calendar (iter. 3).
-'  - Il legame col Sistema di Pagamento e' reso dal solo attributo riferimentoPagamento: la classe
-'    destinazione (Sistema di Pagamento) non e' parte del modello, quindi e' piu' chiaro un attributo
-'    (UML_04 slide 9), esattamente come riferimentoPrenotazione per il Calendar.
-'  - Relazioni di analisi: associazioni con nome/ruolo "da leggere" (UML_04 slide 6) e molteplicita' su
-'    entrambi gli estremi (UML_04 slide 7); classi-associazione per le relazioni reificate (UML_04 slide 10).
-'    La navigabilita' e il raffinamento in aggregazione/composizione sono attivita' di progetto (UML_07 slide 10-11).
-' Layout ELK: niente incroci, linee dritte/ortogonali (richiede Java 17: render via Docker).
-' Coerente con iterazione4/useCase/CASI_USO_REALIZZATI.md e useCase4.puml.
+' CLASSI DI ANALISI - 4a iterazione HackHub (chiusura). Modello CUMULATIVO (iter. 1-4).
+' Questo .puml e' allineato ESATTAMENTE al deliverable finale CLASSI_ANALISI_REALIZZATI.jpg
+' (screenshot del modello in Visual Paradigm). In particolare, rispetto alle bozze precedenti:
+'   - valori degli enum in MAIUSCOLO (Stato con underscore: IN_ISCRIZIONE, IN_CORSO, ...);
+'   - Utente ha solo nome ed email (NESSUN attributo password nel jpg);
+'   - stereotipo <<Entity>> presente SOLO su Pagamento; le altre classi di dominio non hanno
+'     stereotipo; gli enum sono <<enumeration>>;
+'   - la classe-associazione della membership si chiama "appartiene" (minuscolo), non "Appartenenza";
+'   - Pagamento.Importo con l'iniziale maiuscola (come nel jpg);
+'   - le associazioni del triangolo Utente-Team-Hackathon sono etichettate (incarico/iscrizione/appartiene);
+'   - le dipendenze verso gli enum portano lo stereotipo <<use>>;
+'   - associazioni non navigabili (linee semplici, stile domain model); nessuna legenda.
+' Layout ELK (niente incroci, linee ortogonali; render via Docker con Java 17).
 hide empty members
 hide circle
 !pragma layout elk
 
+enum StatoPagamento {
+  INVIATO
+  COMPLETATO
+  FALLITO
+}
+
 enum Stato {
-  InIscrizione
-  InCorso
-  InValutazione
-  Concluso
+  IN_ISCRIZIONE
+  IN_CORSO
+  IN_VALUTAZIONE
+  CONCLUSO
 }
 
 enum RuoloStaff {
-  Organizzatore
-  Giudice
-  Mentore
-}
-
-enum StatoInvito {
-  Pendente
-  Accettato
-  Rifiutato
+  ORGANIZZATORE
+  GIUDICE
+  MENTORE
 }
 
 enum StatoRichiesta {
-  Aperta
-  Gestita
-  Chiusa
+  APERTA
+  GESTITA
+  CHIUSA
 }
 
-enum StatoCall {
-  Proposta
-  Accettata
-  Rifiutata
-}
-
-enum StatoPagamento {
-  Inviato
-  Completato
-  Fallito
+enum StatoInvito {
+  PENDENTE
+  ACCETTATO
+  RIFIUTATO
 }
 
 enum StatoSegnalazione {
-  Aperta
-  Gestita
-  Archiviata
+  APERTA
+  GESTITA
+  ARCHIVIATA
 }
 
-class Utente <<entità>> {
-  nome
-  email
-  password
+enum StatoCall {
+  PROPOSTA
+  ACCETTATA
+  RIFIUTATA
 }
 
-class Hackathon <<entità>> {
+class Pagamento <<Entity>> {
+  Importo
+  dataPagamento
+  riferimentoPagamento
+  stato : StatoPagamento
+}
+
+class Hackathon {
   nome
   regolamento
   scadenzaIscrizioni
@@ -92,146 +78,104 @@ class Hackathon <<entità>> {
   stato : Stato
 }
 
-class Team <<entità>> {
-  nome
-}
-
-class Incarico <<entità>> {
-  ruolo : RuoloStaff
-}
-
-class Appartenenza <<entità>> {
-  amministratore
-}
-
-class Iscrizione <<entità>> {
+class Iscrizione {
   dataIscrizione
 }
 
-class Invito <<entità>> {
-  dataInvito
-  stato : StatoInvito
-}
-
-class Sottomissione <<entità>> {
+class Sottomissione {
   titolo
   contenuto
   dataOra
 }
 
-class Valutazione <<entità>> {
+class Incarico {
+  ruolo : RuoloStaff
+}
+
+class Valutazione {
   giudizio
   punteggio
 }
 
-class RichiestaSupporto <<entità>> {
+class RichiestaSupporto {
   messaggio
   dataRichiesta
   stato : StatoRichiesta
 }
 
-class PropostaCall <<entità>> {
-  dataOraProposta
-  riferimentoPrenotazione
-  stato : StatoCall
+class Invito {
+  dataInvito
+  stato : StatoInvito
 }
 
-class Pagamento <<entità>> {
-  importo
-  dataPagamento
-  riferimentoPagamento
-  stato : StatoPagamento
+class Team {
+  nome
 }
 
-class Segnalazione <<entità>> {
+class appartiene {
+  amministratore
+}
+
+class Utente {
+  nome
+  email
+}
+
+class Segnalazione {
   descrizione
   dataSegnalazione
   stato : StatoSegnalazione
 }
 
+class PropostaCall {
+  dataOraProposta
+  riferimentoPrenotazione
+  stato : StatoCall
+}
+
 ' ===== Triangolo Utente-Team-Hackathon con classi-associazione =====
-Utente "1..*" -- "0..*" Hackathon
+Utente "1..*" -- "0..*" Hackathon : incarico
 (Utente, Hackathon) .. Incarico
-Utente "1..*" -- "0..1" Team
-(Utente, Team) .. Appartenenza
-Team "0..*" -- "0..*" Hackathon
+Utente "1..*\nMembro del Team" -- "0..1" Team : appartiene
+(Utente, Team) .. appartiene
+Team "0..*" -- "0..*" Hackathon : iscrizione
 (Team, Hackathon) .. Iscrizione
 
-' ===== Inviti al team (UC09/UC10): Invito collega l'utente invitato e il Team =====
-Invito "0..*" -- "1" Utente : invitato >
-Invito "0..*" -- "1" Team : verso >
+' ===== Inviti al team (UC09/UC10) =====
+Invito "0..*" -- "1" Utente : invitato
+Invito "0..*" -- "1" Team : fa
 
 ' ===== Catena del valore =====
-Iscrizione "1" -- "0..1" Sottomissione : contiene >
-Sottomissione "1" -- "0..1" Valutazione : riceve >
-Utente "1" -- "0..*" Valutazione : redige >
+Iscrizione "1" -- "0..1" Sottomissione : contiene
+Sottomissione "1" -- "0..1" Valutazione : riceve
+Utente "1\nGiudice" -- "0..*" Valutazione : redige
 
 ' ===== Vincitore dell'hackathon (UC08) =====
-Hackathon "0..*" -- "0..1" Team : vincitore >
+Hackathon "0..*" -- "0..1" Team : vincitore
 
-' ===== Mentoring 3a iterazione (UC11-UC15) =====
-RichiestaSupporto "0..*" -- "1" Team : richiedente >
-RichiestaSupporto "0..*" -- "1" Hackathon : contesto >
-PropostaCall "0..*" -- "1" Team : destinatario >
-PropostaCall "0..*" -- "1" Utente : proponente >
-PropostaCall "0..*" -- "0..1" RichiestaSupporto : in risposta a >
+' ===== Mentoring (UC11-UC15) =====
+RichiestaSupporto "0..*" -- "1" Team : richiede
+RichiestaSupporto "0..*" -- "1" Hackathon : contesto
+PropostaCall "0..*" -- "1" Team : destinatario
+PropostaCall "0..*" -- "1" Utente : proponente
+PropostaCall "0..*" -- "0..1" RichiestaSupporto : in risposta a
 
-' ===== Chiusura della catena del valore - Pagamento (UC16) =====
-' Il premio di un Hackathon e' erogato al Team vincitore; piu' tentativi possibili, al piu' un Pagamento "Completato" (idempotenza).
-Pagamento "0..*" -- "1" Hackathon : per il premio di >
-Pagamento "0..*" -- "1" Team : beneficiario >
+' ===== Pagamento (UC16) =====
+Pagamento "0..*" -- "1" Hackathon : per il premio di
+Pagamento "0..*" -- "1" Team : beneficiario
 
-' ===== Governance - Segnalazione (UC17/UC18) =====
-' Un Mentore (Utente) segnala un Team all'Organizzatore, nel contesto di un Hackathon.
-Segnalazione "0..*" -- "1" Utente : segnalante >
-Segnalazione "0..*" -- "1" Team : segnalato >
-Segnalazione "0..*" -- "1" Hackathon : contesto >
+' ===== Segnalazione (UC17/UC18) =====
+Segnalazione "0..*" -- "1" Utente : segnalante
+Segnalazione "0..*" -- "1" Team : segnalato
+Segnalazione "0..*" -- "1" Hackathon : contesto
 
-' ===== Tipi enumerati (dipendenza d'uso, UML_04 slide 12-13) =====
-Hackathon ..> Stato
-Incarico ..> RuoloStaff
-Invito ..> StatoInvito
-RichiestaSupporto ..> StatoRichiesta
-PropostaCall ..> StatoCall
-Pagamento ..> StatoPagamento
-Segnalazione ..> StatoSegnalazione
-
-legend right
-  Classi di analisi (dominio di business), stereotipo «entità»; stile domain model (niente operazioni — UML_03 slide 13).
-  Modello cumulativo (iter. 1-4). Estensione 4a iterazione: entità **Pagamento** (UC16) e **Segnalazione** (UC17/UC18),
-  attributo **password** su Utente (UC19/UC20).
-  --
-  Iscrizione, Incarico, Appartenenza: classi-associazione (al più un legame per coppia).
-  Incarico: per ogni Hackathon 1 Organizzatore, 1 Giudice, 1..* Mentori (UC22: aggiungere un Mentore = nuovo Incarico ruolo Mentore).
-  Appartenenza: almeno una per Team ha amministratore = vero
-    (più amministratori possibili; ognuno è comunque un membro).
-  Invito: entità che collega l'utente invitato e il Team; stato in {Pendente, Accettato, Rifiutato};
-    al più un invito pendente per coppia (Utente, Team); crea l'invito solo un amministratore del Team;
-    l'accettazione genera un'Appartenenza (membro non amministratore) e vale "un utente, un solo team".
-  Vincitore: 0..1 per Hackathon; è uno dei Team iscritti (Iscrizione); proclamato a valutazioni complete.
-  Valutazione: punteggio in 0..10; il giudice coincide con il Giudice (Incarico)
-    dell'Hackathon della relativa Iscrizione.
-  --
-  RichiestaSupporto: stato in {Aperta, Gestita, Chiusa}; aperta da un Membro (Appartenenza) di un Team iscritto,
-    con Hackathon "in corso"; la coppia (Team, Hackathon) corrisponde a un'Iscrizione esistente;
-    visibile ai Mentori di quell'Hackathon (Incarico, ruolo = Mentore).
-  PropostaCall: stato in {Proposta, Accettata, Rifiutata}; il proponente è un Mentore
-    (Incarico, ruolo = Mentore) dell'Hackathon del Team destinatario; "in risposta a" 0..1 RichiestaSupporto;
-    riferimentoPrenotazione = id dello slot sul Calendar esterno (prenotazione delegata).
-  --
-  Pagamento (UC16): stato in {Inviato (iniziale/transitorio), Completato, Fallito}; un Hackathon può avere più tentativi
-    ma al più un Pagamento "Completato" (idempotenza: non si ri-paga un premio già erogato);
-    ammesso solo a Hackathon "Concluso" con vincitore proclamato (UC08); il beneficiario è il Team vincitore;
-    riferimentoPagamento = id della transazione sul Sistema di Pagamento esterno (erogazione delegata).
-  Segnalazione (UC17/UC18): stato in {Aperta, Gestita, Archiviata}; il segnalante è un Mentore
-    (Incarico, ruolo = Mentore) dell'Hackathon di contesto; il segnalato è un Team iscritto a quell'Hackathon;
-    l'Organizzatore dell'Hackathon decide (UC18).
-  Utente: email = identificativo univoco; password (UC19/UC20) = credenziale per registrazione/accesso;
-    autenticazione "sottile" (D4) — hashing/sessioni/token restano fuori scope (soluzione).
-  --
-  Fuori dal dominio (artefatti di soluzione → diagramma di PROGETTAZIONE, UML_07 slide 6; UML_03 slide 11):
-    i sistemi esterni Calendar e Sistema di Pagamento e gli Adapter che li isolano (CalendarGateway, PaymentGateway);
-    l'Observer (Subject/Observer/ServizioNotifiche) riusato per le notifiche del mentoring e delle segnalazioni.
-endlegend
+' ===== Dipendenze verso gli enum (<<use>>) =====
+Hackathon ..> Stato : <<use>>
+Incarico ..> RuoloStaff : <<use>>
+Invito ..> StatoInvito : <<use>>
+RichiestaSupporto ..> StatoRichiesta : <<use>>
+PropostaCall ..> StatoCall : <<use>>
+Pagamento ..> StatoPagamento : <<use>>
+Segnalazione ..> StatoSegnalazione : <<use>>
 
 @enduml
