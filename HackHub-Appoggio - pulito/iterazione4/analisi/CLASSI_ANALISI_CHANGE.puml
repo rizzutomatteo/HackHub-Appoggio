@@ -1,0 +1,181 @@
+@startuml CLASSI_ANALISI_CHANGE
+' CLASSI DI ANALISI - 4a iterazione HackHub (chiusura). Modello CUMULATIVO (iter. 1-4).
+' Questo .puml e' allineato ESATTAMENTE al deliverable finale CLASSI_ANALISI_REALIZZATI.jpg
+' (screenshot del modello in Visual Paradigm). In particolare, rispetto alle bozze precedenti:
+'   - valori degli enum in MAIUSCOLO (Stato con underscore: IN_ISCRIZIONE, IN_CORSO, ...);
+'   - Utente ha solo nome ed email (NESSUN attributo password nel jpg);
+'   - stereotipo <<Entity>> presente SOLO su Pagamento; le altre classi di dominio non hanno
+'     stereotipo; gli enum sono <<enumeration>>;
+'   - la classe-associazione della membership si chiama "appartiene" (minuscolo), non "Appartenenza";
+'   - Pagamento.Importo con l'iniziale maiuscola (come nel jpg);
+'   - le associazioni del triangolo Utente-Team-Hackathon sono etichettate (incarico/iscrizione/appartiene);
+'   - le dipendenze verso gli enum portano lo stereotipo <<use>>;
+'   - associazioni non navigabili (linee semplici, stile domain model); nessuna legenda.
+' Layout ELK (niente incroci, linee ortogonali; render via Docker con Java 17).
+hide empty members
+hide circle
+!pragma layout elk
+
+enum StatoPagamento {
+  INVIATO
+  COMPLETATO
+  FALLITO
+}
+
+enum Stato {
+  IN_ISCRIZIONE
+  IN_CORSO
+  IN_VALUTAZIONE
+  CONCLUSO
+}
+
+enum RuoloStaff {
+  ORGANIZZATORE
+  GIUDICE
+  MENTORE
+}
+
+enum StatoRichiesta {
+  APERTA
+  GESTITA
+  CHIUSA
+}
+
+enum StatoInvito {
+  PENDENTE
+  ACCETTATO
+  RIFIUTATO
+}
+
+enum StatoSegnalazione {
+  APERTA
+  GESTITA
+  ARCHIVIATA
+}
+
+enum StatoCall {
+  PROPOSTA
+  ACCETTATA
+  RIFIUTATA
+}
+
+class Pagamento <<Entity>> {
+  Importo
+  dataPagamento
+  riferimentoPagamento
+  stato : StatoPagamento
+}
+
+class Hackathon {
+  nome
+  regolamento
+  scadenzaIscrizioni
+  dataInizio
+  dataFine
+  luogo
+  montepremi
+  dimensioneMaxTeam
+  stato : Stato
+}
+
+class Iscrizione {
+  dataIscrizione
+}
+
+class Sottomissione {
+  titolo
+  contenuto
+  dataOra
+}
+
+class Incarico {
+  ruolo : RuoloStaff
+}
+
+class Valutazione {
+  giudizio
+  punteggio
+}
+
+class RichiestaSupporto {
+  messaggio
+  dataRichiesta
+  stato : StatoRichiesta
+}
+
+class Invito {
+  dataInvito
+  stato : StatoInvito
+}
+
+class Team {
+  nome
+}
+
+class appartiene {
+  amministratore
+}
+
+class Utente {
+  nome
+  email
+}
+
+class Segnalazione {
+  descrizione
+  dataSegnalazione
+  stato : StatoSegnalazione
+}
+
+class PropostaCall {
+  dataOraProposta
+  riferimentoPrenotazione
+  stato : StatoCall
+}
+
+' ===== Triangolo Utente-Team-Hackathon con classi-associazione =====
+Utente "1..*" -- "0..*" Hackathon : incarico
+(Utente, Hackathon) .. Incarico
+Utente "1..*\nMembro del Team" -- "0..1" Team : appartiene
+(Utente, Team) .. appartiene
+Team "0..*" -- "0..*" Hackathon : iscrizione
+(Team, Hackathon) .. Iscrizione
+
+' ===== Inviti al team (UC09/UC10) =====
+Invito "0..*" -- "1" Utente : invitato
+Invito "0..*" -- "1" Team : fa
+
+' ===== Catena del valore =====
+Iscrizione "1" -- "0..1" Sottomissione : contiene
+Sottomissione "1" -- "0..1" Valutazione : riceve
+Utente "1\nGiudice" -- "0..*" Valutazione : redige
+
+' ===== Vincitore dell'hackathon (UC08) =====
+Hackathon "0..*" -- "0..1" Team : vincitore
+
+' ===== Mentoring (UC11-UC15) =====
+RichiestaSupporto "0..*" -- "1" Team : richiede
+RichiestaSupporto "0..*" -- "1" Hackathon : contesto
+PropostaCall "0..*" -- "1" Team : destinatario
+PropostaCall "0..*" -- "1" Utente : proponente
+PropostaCall "0..*" -- "0..1" RichiestaSupporto : in risposta a
+
+' ===== Pagamento (UC16) =====
+Pagamento "0..*" -- "1" Hackathon : per il premio di
+Pagamento "0..*" -- "1" Team : beneficiario
+
+' ===== Segnalazione (UC17/UC18) =====
+Segnalazione "0..*" -- "1" Utente : segnalante
+Segnalazione "0..*" -- "1" Team : segnalato
+Segnalazione "0..*" -- "1" Hackathon : contesto
+
+' ===== Dipendenze verso gli enum (<<use>>) =====
+Hackathon ..> Stato : <<use>>
+Incarico ..> RuoloStaff : <<use>>
+Invito ..> StatoInvito : <<use>>
+RichiestaSupporto ..> StatoRichiesta : <<use>>
+PropostaCall ..> StatoCall : <<use>>
+Pagamento ..> StatoPagamento : <<use>>
+Segnalazione ..> StatoSegnalazione : <<use>>
+
+@enduml

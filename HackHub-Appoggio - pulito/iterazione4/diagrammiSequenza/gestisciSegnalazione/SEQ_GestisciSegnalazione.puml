@@ -1,0 +1,76 @@
+@startuml SEQ_GestisciSegnalazione
+' Diagramma di sequenza — realizzazione di UC18 Gestisci Segnalazione (4a iterazione HackHub). Bozza (CHANGE).
+' GRASP: Information Expert (scope via Incarico: l'Organizzatore vede solo le segnalazioni dei propri hackathon),
+'   Controller (GestoreSegnalazione), Pure Fabrication (RepoSegnalazione).
+' Riusa l'entita' Segnalazione e il GestoreSegnalazione di UC17. Segnalazione.stato = enum (Aperta/Gestita/Archiviata), NON State.
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Gestisci Segnalazione (UC18)
+
+actor "Organizzatore" as Org
+boundary "PaginaGestisciSegnalazioni" as B
+control "GestoreSegnalazione" as GS
+participant "RepoSegnalazione" as RSeg <<pure fabrication>>
+entity "seg : Segnalazione" as Seg
+
+Org -> B : visualizzaSegnalazioni(organizzatore)
+activate B
+B -> GS : segnalazioniDellOrganizzatore(organizzatore)
+activate GS
+GS -> RSeg : trovaPerHackathonDellOrganizzatore(organizzatore)
+RSeg --> GS : elenco
+GS --> B : elenco
+deactivate GS
+alt nessuna segnalazione (UC18 2a)
+    B --> Org : elenco vuoto
+else almeno una segnalazione
+    B --> Org : mostra elenco (team, hackathon, descrizione, stato)
+end
+
+Org -> B : selezionaSegnalazione(seg)
+alt l'Organizzatore registra la decisione del caso
+    Org -> B : registra decisione
+    B -> GS : gestisci(seg, decisione)
+    activate GS
+    GS -> Seg : stato()
+    activate Seg
+    Seg --> GS : stato
+    deactivate Seg
+    alt segnalazione non piu' Aperta (UC18 3a)
+        GS --> B : gia' trattata
+        B --> Org : segnalazione gia' gestita/archiviata
+    else segnalazione Aperta
+        GS -> Seg : gestisci(decisione)
+        GS -> RSeg : salva(seg)
+        GS --> B : esito positivo
+        B --> Org : presa in carico (stato = Gestita)
+    end
+    deactivate GS
+else l'Organizzatore archivia senza provvedimenti (UC18 3b)
+    Org -> B : archivia
+    B -> GS : archivia(seg)
+    activate GS
+    GS -> Seg : archivia()
+    GS -> RSeg : salva(seg)
+    GS --> B : esito positivo
+    B --> Org : segnalazione archiviata (stato = Archiviata)
+    deactivate GS
+end
+deactivate B
+
+note over GS, RSeg
+  Information Expert / scope via Incarico (D5): l'Organizzatore consulta e gestisce SOLO le segnalazioni
+  degli hackathon a cui e' assegnato (Incarico, ruolo = Organizzatore) — stesso filtro dei Mentori (iter.3).
+end note
+note over Seg
+  Segnalazione.stato e' un enum (Aperta/Gestita/Archiviata), NON un pattern State.
+  Seg.gestisci(decisione) → stato = Gestita (conserva l'esito); Seg.archivia() → stato = Archiviata.
+end note
+note over Org, B
+  *a: in qualunque momento l'Organizzatore annulla; nessun cambiamento.
+  Auth (precondizione, stub): Organizzatore corrente (assegnato agli hackathon, Incarico).
+end note
+@enduml

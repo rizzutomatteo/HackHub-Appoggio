@@ -1,0 +1,79 @@
+@startuml SEQ_ProponeCall
+' Diagramma di sequenza — realizzazione di UC13 Propone Call (3a iterazione HackHub). Bozza (CHANGE).
+' Pattern Adapter: CalendarGateway isola l'API esterna Calendar (verifica/riserva slot, contratto sincrono §1.5);
+'   il control dipende SOLO dalla porta, l'esterno e' raggiunto solo via adapter (client -> target -> adaptee).
+' Pattern Observer (riuso iter.2): ServizioNotifiche (Subject) notifica il team (Observer).
+' GRASP: Controller (GestoreCall), Creator (crea PropostaCall), Pure Fabrication (Repo*, CalendarGateway).
+' PropostaCall.stato e' un enum (Proposta/Accettata/Rifiutata), NON un pattern State.
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Propone Call (UC13)
+
+actor "Mentore" as Men
+boundary "PaginaPropostaCall" as B
+control "GestoreCall" as GC
+participant "CalendarGateway" as CG <<adapter>>
+participant "Calendar" as CAL <<sistema esterno>>
+participant "RepoPropostaCall" as RPC <<pure fabrication>>
+participant "ServizioNotifiche" as SN <<subject>>
+entity "a : Utente" as A
+
+Men -> B : proponiCall(richiesta)
+activate B
+B --> Men : mostra modulo (data/ora slot)
+Men -> B : inserisci slot, conferma
+B -> GC : proponiCall(mentore, richiesta, slot)
+activate GC
+GC -> GC : mentoreAssegnato(mentore, richiesta)
+
+alt Mentore non assegnato all'hackathon (UC13 1a)
+    GC --> B : fuori competenza
+    B --> Men : proposta non consentita (non sei Mentore di questo hackathon)
+else Mentore assegnato (Incarico, ruolo = Mentore)
+    GC -> CG : riservaSlot(slot)
+    activate CG
+    CG -> CAL : riserva(slot)
+    activate CAL
+    CAL --> CG : esito
+    deactivate CAL
+    CG --> GC : esito
+    deactivate CG
+    alt Calendar non disponibile (UC13 4a)
+        GC --> B : servizio esterno non disponibile
+        B --> Men : impossibile creare la proposta ora; riprovare
+    else slot non disponibile (UC13 4b)
+        GC --> B : slot occupato
+        B --> Men : slot non disponibile; scegliere un altro orario
+    else slot riservato (esito = riferimentoPrenotazione)
+        create entity "proposta : PropostaCall" as P
+        GC -> P : <<crea>>(mentore, team, richiesta, slot, riferimentoPrenotazione, stato = Proposta)
+        GC -> RPC : salva(proposta)
+        GC -> SN : notifica(proposta)
+        activate SN
+        SN -> A : aggiorna(proposta)
+        deactivate SN
+        GC --> B : esito positivo
+        B --> Men : proposta inviata (team avvisato)
+    end
+end
+deactivate GC
+deactivate B
+
+note over CG, CAL
+  Pattern Adapter: la piattaforma dipende solo dalla porta CalendarGateway; l'API esterna
+  Calendar e' raggiunta SOLO tramite l'adapter (contratto sincrono, §1.5). riservaSlot =
+  prenotazione "tentativa": riservaSlot restituisce un esito = il riferimento di prenotazione
+  (riferimentoPrenotazione) se lo slot e' libero, altrimenti l'indisponibilita'.
+end note
+note over SN, A
+  Pattern Observer (riuso iter.2): il team destinatario (i suoi Utente, es. l'amministratore)
+  e' notificato della nuova proposta.
+end note
+note over Men, B
+  *a: in qualunque momento il Mentore puo' annullare (nessuna proposta; lo slot tentativo viene rilasciato/scade).
+  4b: jump al passo 2 (scelta di un altro slot).
+end note
+@enduml

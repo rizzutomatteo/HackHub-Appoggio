@@ -1,0 +1,89 @@
+@startuml SEQ_ProclamaVincitore
+' Diagramma di sequenza — realizzazione di UC08 Proclama Vincitore (2a iterazione HackHub). Bozza (CHANGE).
+' Pattern State: la transizione InValutazione -> Concluso e' delegata allo stato corrente
+' (InValutazione.concludi() crea Concluso). Information Expert: "tutte valutate" e classifica.
+' Nuovo attributo Hackathon.vincitore (assente in iter.1).
+' AGGIORNATO (allineato al codice realizzato): si delega PRIMA la conclusione (stato.concludi());
+' il vincitore viene registrato solo se la transizione riesce (ordine come Hackathon.proclamaVincitore).
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Proclama Vincitore (UC08)
+
+actor "Organizzatore" as Org
+boundary "PaginaProclamaVincitore" as B
+control "GestoreHackathon" as GH
+entity "h : Hackathon" as H
+entity "s : InValutazione" as S
+participant "RepoSottomissione" as RS <<pure fabrication>>
+participant "RepoHackathon" as Repo <<pure fabrication>>
+
+Org -> B : apriProclamazione(hackathon)
+activate B
+B -> GH : preparaProclamazione(hackathon)
+activate GH
+GH -> H : valutazioneConsentita()
+activate H
+H -> S : valutazioneConsentita()
+activate S
+S --> H : esito
+deactivate S
+H --> GH : esito
+deactivate H
+
+alt stato diverso da InValutazione (UC08 1a)
+    GH --> B : non consentito
+    B --> Org : proclamazione non consentita: stato non valido
+else stato = InValutazione
+    GH -> RS : sottomissioniDi(hackathon)
+    RS --> GH : elenco
+    alt nessuna sottomissione (UC08 3a)
+        GH --> B : nessun vincitore proclamabile
+        B --> Org : non esistono sottomissioni
+    else esiste almeno una sottomissione
+        GH -> GH : tutteValutate(elenco)
+        alt non tutte le sottomissioni valutate (UC08 2a)
+            GH --> B : valutazioni incomplete
+            B --> Org : mancano valutazioni: attendere il Giudice
+        else tutte le sottomissioni valutate
+            GH -> GH : classificaPerPunteggio(elenco)
+            GH --> B : classifica
+            B --> Org : mostra classifica (punteggio massimo evidenziato)
+            Org -> B : proclama(teamVincitore)
+            B -> GH : proclamaVincitore(hackathon, teamVincitore)
+            GH -> H : proclamaVincitore(teamVincitore)
+            activate H
+            H -> S : concludi()
+            activate S
+            create entity "concluso : Concluso" as S2
+            S -> S2 : <<crea>>
+            S --> H : concluso
+            deactivate S
+            H -> H : vincitore = teamVincitore
+            H -> H : stato = concluso
+            H --> GH : esito positivo
+            deactivate H
+            GH -> Repo : salva(h)
+            GH --> B : esito positivo
+            B --> Org : vincitore proclamato; hackathon concluso
+        end
+    end
+end
+deactivate GH
+deactivate B
+
+note over GH
+  "tutte valutate" = ogni Sottomissione.getValutazione() != null (Information Expert).
+  classificaPerPunteggio: vincitore = punteggio massimo.
+end note
+note over Org, B
+  Parita': se piu' team hanno il punteggio massimo, l'Organizzatore
+  sceglie l'unico vincitore tra essi (UC08 4a; "un solo team vincitore").
+end note
+note over H, S
+  Pattern State: la conclusione e' delegata PRIMA (InValutazione.concludi() -> Concluso);
+  l'Hackathon registra il vincitore solo se la transizione e' riuscita (ordine = codice).
+end note
+@enduml

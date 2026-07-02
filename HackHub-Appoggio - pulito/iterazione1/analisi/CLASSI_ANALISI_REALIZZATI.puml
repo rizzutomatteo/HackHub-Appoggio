@@ -1,0 +1,97 @@
+@startuml CLASSI_ANALISI_HackHub
+' CLASSI DI ANALISI - 1a iterazione HackHub. Solo dominio di business (UML_03 slide 11).
+' Stile domain model: niente operazioni (UML_03 slide 13).
+' Iscrizione, Incarico, Appartenenza sono CLASSI-ASSOCIAZIONE (UML_04 slide 10):
+' reificano le relazioni del triangolo Utente-Team-Hackathon.
+' Layout ELK: niente incroci, linee dritte/ortogonali (richiede Java 17: render via Docker).
+' Coerente con useCase.puml e CASI_USO_REALIZZATI.md.
+hide empty members
+hide circle
+!pragma layout elk
+
+enum Stato {
+  InIscrizione
+  InCorso
+  InValutazione
+  Concluso
+}
+
+enum RuoloStaff {
+  Organizzatore
+  Giudice
+  Mentore
+}
+
+class Utente <<entità>> {
+  nome
+  email
+}
+
+class Hackathon <<entità>> {
+  nome
+  regolamento
+  scadenzaIscrizioni
+  dataInizio
+  dataFine
+  luogo
+  montepremi
+  dimensioneMaxTeam
+  stato : Stato
+}
+
+class Team <<entità>> {
+  nome
+}
+
+class Incarico <<entità>> {
+  ruolo : RuoloStaff
+}
+
+class Appartenenza <<entità>> {
+  amministratore
+}
+
+class Iscrizione <<entità>> {
+  dataIscrizione
+}
+
+class Sottomissione <<entità>> {
+  titolo
+  contenuto
+  dataOra
+}
+
+class Valutazione <<entità>> {
+  giudizio
+  punteggio
+}
+
+' ===== Triangolo Utente-Team-Hackathon con classi-associazione =====
+Utente "1..*" -- "0..*" Hackathon
+(Utente, Hackathon) .. Incarico
+Utente "1..*" -- "0..1" Team
+(Utente, Team) .. Appartenenza
+Team "0..*" -- "0..*" Hackathon
+(Team, Hackathon) .. Iscrizione
+
+' ===== Catena del valore =====
+Iscrizione "1" -- "0..1" Sottomissione : contiene >
+Sottomissione "1" -- "0..1" Valutazione : riceve >
+Utente "1" -- "0..*" Valutazione : redige >
+
+' ===== Tipi enumerati =====
+Hackathon ..> Stato
+Incarico ..> RuoloStaff
+
+legend right
+  Classi di analisi (dominio di business), stereotipo «entità»; stile domain model (niente operazioni).
+  --
+  Iscrizione, Incarico, Appartenenza: classi-associazione (al più un legame per coppia).
+  Incarico: per ogni Hackathon 1 Organizzatore, 1 Giudice, 1..* Mentori.
+  Appartenenza: almeno una per Team ha amministratore = vero
+    (più amministratori possibili; ognuno è comunque un membro).
+  Valutazione: punteggio in 0..10; il giudice coincide con il Giudice (Incarico)
+    dell'Hackathon della relativa Iscrizione.
+endlegend
+
+@enduml

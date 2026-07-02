@@ -1,0 +1,68 @@
+@startuml SEQ_IniziaFaseValutazione
+' Diagramma di sequenza — realizzazione di UC07 Inizia Fase Valutazione (2a iterazione HackHub). Bozza (CHANGE).
+' Pattern State: la transizione InCorso -> InValutazione e' delegata allo stato corrente
+' (solo InCorso.iniziaValutazione() crea InValutazione; altrove rifiutata per polimorfismo).
+' Guardia temporale (now >= dataFine): Information Expert sull'Hackathon; preserva
+' "sottomissioni entro la scadenza" (non si chiude prima della data di fine).
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Inizia Fase Valutazione (UC07)
+
+actor "Organizzatore" as Org
+boundary "PaginaIniziaValutazione" as B
+control "GestoreHackathon" as GH
+entity "h : Hackathon" as H
+entity "s : InCorso" as S
+participant "RepoHackathon" as Repo <<pure fabrication>>
+
+Org -> B : iniziaFaseValutazione(hackathon)
+activate B
+B -> GH : iniziaFaseValutazione(hackathon)
+activate GH
+GH -> H : iniziaFaseValutazione()
+activate H
+H -> H : dataFineRaggiunta()
+
+alt data di fine non ancora raggiunta (UC07 3a)
+    H --> GH : esito negativo
+    deactivate H
+    GH --> B : esito negativo
+    B --> Org : rifiutato: le sottomissioni restano aperte fino alla scadenza
+else now >= dataFine
+    H -> S : iniziaValutazione()
+    activate S
+    alt stato corrente diverso da InCorso (UC07 3b)
+        S --> H : transizione non consentita
+        deactivate S
+        H --> GH : esito negativo
+        deactivate H
+        GH --> B : esito negativo
+        B --> Org : rifiutato: stato non valido
+    else stato = InCorso
+        create entity "inValutazione : InValutazione" as S2
+        S -> S2 : <<crea>>
+        S --> H : inValutazione
+        deactivate S
+        H -> H : stato = inValutazione
+        H --> GH : esito positivo
+        deactivate H
+        GH -> Repo : salva(h)
+        GH --> B : esito positivo
+        B --> Org : valutazione aperta (sottomissioni chiuse; il Giudice puo' valutare - UC05)
+    end
+end
+deactivate GH
+deactivate B
+
+note over H, S
+  Pattern State: la transizione e' delegata allo stato corrente.
+  InCorso.iniziaValutazione() crea e restituisce InValutazione;
+  da altri stati e' rifiutata (polimorfismo).
+end note
+note over Org, B
+  In qualunque momento l'Organizzatore puo' annullare: nessuna transizione.
+end note
+@enduml

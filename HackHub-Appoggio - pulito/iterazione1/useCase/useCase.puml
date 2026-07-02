@@ -1,0 +1,134 @@
+@startuml useCase_HackHub
+' Traduzione 1:1 del diagramma dei casi d'uso "useCase.jpg" (HackHub).
+' Verde = casi d'uso della 1a iterazione.
+left to right direction
+skinparam packageStyle rectangle
+
+' ===== Attori primari =====
+actor "Membro staff"        as MembroStaff
+actor "Organizzatore"       as Organizzatore
+actor "Giudice"             as Giudice
+actor "Mentore"             as Mentore
+actor "Amministratore Team" as AmminTeam
+actor "Membro del team"     as MembroTeam
+actor "Utente"              as Utente
+actor "Visitatore"          as Visitatore
+
+' ===== Attori secondari (sistemi esterni) =====
+actor "Sistema Pagamento" as SistemaPagamento
+actor "Calendar"          as Calendar
+
+' ===== Generalizzazioni tra attori =====
+Organizzatore --|> MembroStaff
+Giudice       --|> MembroStaff
+Mentore       --|> MembroStaff
+AmminTeam     --|> MembroTeam
+
+rectangle HackHub {
+
+  ' --- Membro staff ---
+  usecase "Visualizza Sottomissioni\nHackathon Assegnato" as UC_VisSottAssegnato
+
+  ' --- Organizzatore ---
+  usecase "Elimina Hackathon"        as UC_EliminaHack
+  usecase "Gestisci Segnalazioni"    as UC_GestSegnal
+  usecase "Modifica info Hackathon"  as UC_ModInfoHack
+  usecase "Rimuovi Staff"            as UC_RimuoviStaff
+  usecase "Proclama Vincitore"       as UC_ProclamaVinc
+  usecase "Avvia Hackathon"          as UC_AvviaHack
+  usecase "Invita staff"             as UC_InvitaStaff
+  usecase "Paga Montepremi"          as UC_PagaMontepremi
+  usecase "Crea Hackathon"           as UC_CreaHack #PaleGreen
+  usecase "Inizia Fase Valutazione"  as UC_IniziaFaseVal
+
+  ' --- Giudice ---
+  usecase "Valuta Sottomissione"     as UC_ValutaSott #PaleGreen
+
+  ' --- Mentore ---
+  usecase "Segnala Team"                  as UC_SegnalaTeam
+  usecase "Visualizza Richiesta di Supporto" as UC_VisRichSupp
+  usecase "Propone Call"                  as UC_ProponeCall
+
+  ' --- Amministratore Team ---
+  usecase "Rifiuta Proposta Call" as UC_RifiutaCall
+  usecase "Accetta Proposta Call" as UC_AccettaCall
+  usecase "Invita Membro"         as UC_InvitaMembro
+  usecase "Rende amministratore"  as UC_RendeAmmin
+  usecase "Elimina Team"          as UC_EliminaTeam
+
+  ' --- Membro del team ---
+  usecase "Visualizza Risultati"            as UC_VisRisultati
+  usecase "Invia Sottomissione"             as UC_InviaSott #PaleGreen
+  usecase "Visualizza Sottomissioni Proprie" as UC_VisSottProprie
+  usecase "Visualizza Traccia Progetto"     as UC_VisTraccia
+  usecase "Iscrive Team"                    as UC_IscriveTeam #PaleGreen
+  usecase "Richiede Supporto"               as UC_RichiedeSupp
+  usecase "Abbandona Team"                  as UC_AbbandonaTeam
+
+  ' --- Utente ---
+  usecase "Crea Team"                as UC_CreaTeam #PaleGreen
+  usecase "Accetta Invito"           as UC_AccettaInvito
+  usecase "Visualizza lista Hackathon" as UC_VisListaHack
+  usecase "Logout"                   as UC_Logout
+
+  ' --- Visitatore ---
+  usecase "Accedi a informazioni pubbliche" as UC_AccediInfoPub
+  usecase "Autenticazione"                  as UC_Autenticazione
+  usecase "Registrazione"                   as UC_Registrazione
+}
+
+' ===== Associazioni attore - caso d'uso =====
+MembroStaff -- UC_VisSottAssegnato
+
+Organizzatore -- UC_EliminaHack
+Organizzatore -- UC_GestSegnal
+Organizzatore -- UC_ModInfoHack
+Organizzatore -- UC_RimuoviStaff
+Organizzatore -- UC_ProclamaVinc
+Organizzatore -- UC_AvviaHack
+Organizzatore -- UC_InvitaStaff
+Organizzatore -- UC_PagaMontepremi
+Organizzatore -- UC_CreaHack
+Organizzatore -- UC_IniziaFaseVal
+
+Giudice -- UC_ValutaSott
+
+Mentore -- UC_SegnalaTeam
+Mentore -- UC_VisRichSupp
+Mentore -- UC_ProponeCall
+
+AmminTeam -- UC_RifiutaCall
+AmminTeam -- UC_AccettaCall
+AmminTeam -- UC_InvitaMembro
+AmminTeam -- UC_RendeAmmin
+AmminTeam -- UC_EliminaTeam
+
+MembroTeam -- UC_VisRisultati
+MembroTeam -- UC_InviaSott
+MembroTeam -- UC_VisSottProprie
+MembroTeam -- UC_VisTraccia
+MembroTeam -- UC_IscriveTeam
+MembroTeam -- UC_RichiedeSupp
+MembroTeam -- UC_AbbandonaTeam
+
+Utente -- UC_CreaTeam
+Utente -- UC_AccettaInvito
+Utente -- UC_VisListaHack
+Utente -- UC_Logout
+
+Visitatore -- UC_AccediInfoPub
+Visitatore -- UC_Autenticazione
+Visitatore -- UC_Registrazione
+
+' ===== Associazioni con attori secondari =====
+UC_PagaMontepremi -- SistemaPagamento
+UC_ProponeCall    -- Calendar
+UC_AccettaCall    -- Calendar
+
+legend right
+  Verde = casi d'uso della 1a iterazione
+  (Crea Hackathon, Crea Team, Iscrive Team,
+   Invia Sottomissione, Valuta Sottomissione)
+endlegend
+
+@enduml

@@ -1,0 +1,56 @@
+@startuml SEQ_InvitaMembro
+' Diagramma di sequenza — realizzazione di UC09 Invita Membro (2a iterazione HackHub). Bozza (CHANGE).
+' Pattern Observer: ServizioNotifiche (Subject) notifica l'Utente invitato (Observer) del nuovo invito.
+' GRASP: Creator (GestoreInviti crea l'Invito), Pure Fabrication (RepoInvito).
+' Invito.stato e' un semplice enum (Pendente/Accettato/Rifiutato), NON un pattern State.
+hide footbox
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam maxMessageSize 260
+
+title Invita Membro (UC09)
+
+actor "Amministratore Team" as Adm
+boundary "PaginaInvito" as B
+control "GestoreInviti" as GI
+participant "RepoInvito" as RInv <<pure fabrication>>
+participant "ServizioNotifiche" as SN <<subject>>
+entity "uInv : Utente" as U
+
+Adm -> B : invitaMembro(team)
+activate B
+B --> Adm : mostra utenti invitabili
+Adm -> B : seleziona utente invitato, conferma
+B -> GI : invita(team, utenteInvitato)
+activate GI
+GI -> RInv : esisteInvitoPendente(team, utenteInvitato)
+RInv --> GI : esito
+
+alt esiste gia' un invito pendente (UC09 3a)
+    GI --> B : duplicato
+    B --> Adm : invito gia' presente per questo utente
+else nessun invito pendente
+    create entity "inv : Invito" as Inv
+    GI -> Inv : <<crea>>(team, utenteInvitato, stato = Pendente, dataInvito = adesso)
+    GI -> RInv : salva(inv)
+    GI -> SN : notifica(inv)
+    activate SN
+    SN -> U : aggiorna(inv)
+    deactivate SN
+    GI --> B : esito positivo
+    B --> Adm : invito inviato
+end
+deactivate GI
+deactivate B
+
+note over SN, U
+  Pattern Observer: ServizioNotifiche (Subject) notifica gli Utente osservatori;
+  qui l'utente invitato (Observer) riceve l'avviso del nuovo invito.
+  Riusabile per le notifiche dei Mentori (iterazioni successive).
+end note
+note over GI
+  Solo un amministratore del Team puo' invitare (precondizione).
+  "Un utente, un solo team" e' verificato all'accettazione (UC10), non qui.
+  Opzionale (UC09 3b): avvisare se l'utente e' gia' in un team.
+end note
+@enduml
