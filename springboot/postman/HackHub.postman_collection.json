@@ -1,0 +1,655 @@
+{
+  "info": {
+    "name": "HackHub API",
+    "description": "Collezione delle chiamate REST del backend Spring Boot di HackHub.\n\nBase URL configurabile tramite la variabile di collezione `baseUrl` (default http://localhost:8080).\n\nAvviare prima il server con `./gradlew bootRun` dalla cartella `springboot/`.\n\nGli id generati a runtime (iscrizioneId, invitoId, sottomissioneId, richiestaId, propostaId, segnalazioneId) vengono salvati automaticamente nelle variabili di collezione dagli script della tab Tests: le chiamate successive li riusano tramite {{...}}. Eseguendo le richieste nell'ordine in cui compaiono (dall'alto verso il basso, tramite il Collection Runner) il flusso funziona senza copiare id a mano.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080", "type": "string" },
+    { "key": "hackathonNome", "value": "HackHub 2026", "type": "string" },
+    { "key": "teamNome", "value": "Team Alpha", "type": "string" },
+    {
+      "key": "organizzatoreEmail",
+      "value": "organizzatore@example.com",
+      "type": "string"
+    },
+    { "key": "giudiceEmail", "value": "giudice@example.com", "type": "string" },
+    { "key": "mentoreEmail", "value": "mentore@example.com", "type": "string" },
+    {
+      "key": "creatoreEmail",
+      "value": "mario.rossi@example.com",
+      "type": "string"
+    },
+    {
+      "key": "invitatoEmail",
+      "value": "collega@example.com",
+      "type": "string"
+    },
+    { "key": "iscrizioneId", "value": "", "type": "string" },
+    { "key": "invitoId", "value": "", "type": "string" },
+    { "key": "sottomissioneId", "value": "", "type": "string" },
+    { "key": "richiestaId", "value": "", "type": "string" },
+    { "key": "propostaId", "value": "", "type": "string" },
+    { "key": "segnalazioneId", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Account",
+      "item": [
+        {
+          "name": "Registrati (UC19)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Registrazione riuscita (201) o gia esistente (409)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Mario Rossi\",\n  \"email\": \"{{creatoreEmail}}\",\n  \"password\": \"segreta123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/account/registrati",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "account", "registrati"]
+            },
+            "description": "Registra un nuovo utente. 201 con id (= email) se creato; 409 se registrazione non riuscita.\n\nNOTA: per far funzionare 'Crea hackathon' servono anche gli utenti organizzatore, giudice e mentore: duplicare questa richiesta cambiando nome/email (o le variabili organizzatoreEmail/giudiceEmail/mentoreEmail)."
+          }
+        },
+        {
+          "name": "Accedi (UC20)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Autenticazione riuscita (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{creatoreEmail}}\",\n  \"password\": \"segreta123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/account/accedi",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "account", "accedi"]
+            },
+            "description": "Autentica un utente esistente. 200 con email; 401 se credenziali non valide."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Hackathon",
+      "item": [
+        {
+          "name": "Crea hackathon",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Hackathon creato (201) o gia esistente (409)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('hackathonNome', json.id);",
+                  "    console.log('hackathonNome =', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"{{hackathonNome}}\",\n  \"dataInizio\": \"2026-09-01\",\n  \"dataFine\": \"2026-09-03\",\n  \"luogo\": \"Camerino\",\n  \"regolamento\": \"Regolamento ufficiale della gara\",\n  \"scadenzaIscrizioni\": \"2026-08-25\",\n  \"dimensioneMaxTeam\": 5,\n  \"montepremi\": 10000,\n  \"organizzatoreEmail\": \"{{organizzatoreEmail}}\",\n  \"giudiceEmail\": \"{{giudiceEmail}}\",\n  \"mentoriEmails\": [\"{{mentoreEmail}}\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/hackathon",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hackathon"]
+            },
+            "description": "Crea un hackathon. Organizzatore/giudice/mentori devono esistere (404 altrimenti). Date in formato ISO (yyyy-MM-dd). 201 con id (= nome)."
+          }
+        },
+        {
+          "name": "Hackathon pubblici (UC21)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hackathon/pubblici",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hackathon", "pubblici"]
+            },
+            "description": "Informazioni pubbliche di tutti gli hackathon."
+          }
+        },
+        {
+          "name": "Avvia hackathon",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hackathon/{{hackathonNome}}/avvia",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hackathon", "{{hackathonNome}}", "avvia"]
+            },
+            "description": "Transizione di stato: avvia l'hackathon. 409 se non consentito."
+          }
+        },
+        {
+          "name": "Inizia valutazione",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hackathon/{{hackathonNome}}/inizia-valutazione",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "api",
+                "hackathon",
+                "{{hackathonNome}}",
+                "inizia-valutazione"
+              ]
+            },
+            "description": "Transizione di stato: avvia la fase di valutazione. 409 se non consentito."
+          }
+        },
+        {
+          "name": "Classifica",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hackathon/{{hackathonNome}}/classifica",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hackathon", "{{hackathonNome}}", "classifica"]
+            },
+            "description": "Lista ordinata delle sottomissioni per la proclamazione. 409 se non disponibile."
+          }
+        },
+        {
+          "name": "Proclama vincitore",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamVincitore\": \"{{teamNome}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/hackathon/{{hackathonNome}}/proclama",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hackathon", "{{hackathonNome}}", "proclama"]
+            },
+            "description": "Proclama il team vincitore (identificato per nome). 404 se team non trovato; 409 se non consentita."
+          }
+        },
+        {
+          "name": "Paga montepremi (UC16)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/hackathon/{{hackathonNome}}/paga",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hackathon", "{{hackathonNome}}", "paga"]
+            },
+            "description": "Eroga il montepremi al team vincitore (integrazione Stripe via PaymentGateway). 409 se non riuscito."
+          }
+        },
+        {
+          "name": "Aggiungi mentore (UC22)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"organizzatoreEmail\": \"{{organizzatoreEmail}}\",\n  \"utenteEmail\": \"{{mentoreEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/hackathon/{{hackathonNome}}/mentori",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "hackathon", "{{hackathonNome}}", "mentori"]
+            },
+            "description": "L'Organizzatore assegnato aggiunge un Mentore a un hackathon non concluso. 409 se non consentita."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Team",
+      "item": [
+        {
+          "name": "Crea team",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Team creato (201) o gia esistente (409)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('teamNome', json.id);",
+                  "    console.log('teamNome =', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"{{teamNome}}\",\n  \"creatoreEmail\": \"{{creatoreEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/team",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "team"]
+            },
+            "description": "Crea un team. 201 con id (= nome); 404 se creatore non trovato; 409 se non riuscita."
+          }
+        },
+        {
+          "name": "Iscrivi team a hackathon",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Iscrizione creata (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('iscrizioneId', json.iscrizioneId);",
+                  "    console.log('iscrizioneId =', json.iscrizioneId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hackathon\": \"{{hackathonNome}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/team/{{teamNome}}/iscrivi",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "team", "{{teamNome}}", "iscrivi"]
+            },
+            "description": "Iscrive il team a un hackathon. 201 con iscrizioneId (salvato in {{iscrizioneId}}); 409 se non riuscita."
+          }
+        },
+        {
+          "name": "Invita utente nel team",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Invito creato (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('invitoId', json.invitoId);",
+                  "    console.log('invitoId =', json.invitoId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"utenteInvitatoEmail\": \"{{invitatoEmail}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/team/{{teamNome}}/inviti",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "team", "{{teamNome}}", "inviti"]
+            },
+            "description": "Invita un utente nel team. 201 con invitoId (salvato in {{invitoId}}); 409 se non riuscito."
+          }
+        },
+        {
+          "name": "Accetta invito",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/team/inviti/{{invitoId}}/accetta",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "team", "inviti", "{{invitoId}}", "accetta"]
+            },
+            "description": "Accetta un invito pendente. Usa {{invitoId}} salvato dalla creazione dell'invito. 409 se non riuscita."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Sottomissioni",
+      "item": [
+        {
+          "name": "Invia sottomissione",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Sottomissione creata (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('sottomissioneId', json.sottomissioneId);",
+                  "    console.log('sottomissioneId =', json.sottomissioneId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"iscrizioneId\": \"{{iscrizioneId}}\",\n  \"titolo\": \"Progetto Alpha\",\n  \"contenuto\": \"https://github.com/teamalpha/progetto\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sottomissioni",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sottomissioni"]
+            },
+            "description": "Invia una sottomissione per una data iscrizione. Usa {{iscrizioneId}}. 201 con sottomissioneId (salvato in {{sottomissioneId}}); 409 se non riuscita."
+          }
+        },
+        {
+          "name": "Elenco sottomissioni per hackathon",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/sottomissioni/hackathon/{{hackathonNome}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sottomissioni", "hackathon", "{{hackathonNome}}"]
+            },
+            "description": "Elenca le sottomissioni di un hackathon."
+          }
+        },
+        {
+          "name": "Valuta sottomissione",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"giudizio\": \"Ottimo lavoro, soluzione solida\",\n  \"punteggio\": 8\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/sottomissioni/{{sottomissioneId}}/valuta",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "sottomissioni", "{{sottomissioneId}}", "valuta"]
+            },
+            "description": "Valuta una sottomissione. Usa {{sottomissioneId}}. 409 se non riuscita."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mentoring",
+      "item": [
+        {
+          "name": "Richiedi supporto (UC11)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Richiesta di supporto creata (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('richiestaId', json.richiestaId);",
+                  "    console.log('richiestaId =', json.richiestaId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"teamNome\": \"{{teamNome}}\",\n  \"hackathonNome\": \"{{hackathonNome}}\",\n  \"messaggio\": \"Abbiamo bisogno di aiuto sull'architettura\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mentoring/richieste",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mentoring", "richieste"]
+            },
+            "description": "Il team richiede supporto. 201 con richiestaId (salvato in {{richiestaId}}); 409 se non consentita."
+          }
+        },
+        {
+          "name": "Richieste del mentore (UC12)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mentoring/richieste/mentore/{{mentoreEmail}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "api",
+                "mentoring",
+                "richieste",
+                "mentore",
+                "{{mentoreEmail}}"
+              ]
+            },
+            "description": "Elenca le richieste di supporto assegnate a un mentore (per email)."
+          }
+        },
+        {
+          "name": "Proponi call (UC13)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Proposta di call creata (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('propostaId', json.propostaId);",
+                  "    console.log('propostaId =', json.propostaId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mentoreEmail\": \"{{mentoreEmail}}\",\n  \"richiestaId\": \"{{richiestaId}}\",\n  \"slot\": \"2026-09-02T15:00:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mentoring/call",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mentoring", "call"]
+            },
+            "description": "Il mentore propone una call (attiva Google Calendar via adapter). Usa {{richiestaId}}. slot in formato ISO date-time. 201 con propostaId (salvato in {{propostaId}}); 409 se non consentita."
+          }
+        },
+        {
+          "name": "Accetta proposta call (UC14)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mentoring/call/{{propostaId}}/accetta",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mentoring", "call", "{{propostaId}}", "accetta"]
+            },
+            "description": "Accetta una proposta di call (conferma Calendar via adapter). Usa {{propostaId}}. 409 se non consentita."
+          }
+        },
+        {
+          "name": "Rifiuta proposta call (UC15)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mentoring/call/{{propostaId}}/rifiuta",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mentoring", "call", "{{propostaId}}", "rifiuta"]
+            },
+            "description": "Rifiuta una proposta di call. Usa {{propostaId}}. 409 se non consentito."
+          }
+        },
+        {
+          "name": "Segnala team (UC17)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Segnalazione creata (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('segnalazioneId', json.segnalazioneId);",
+                  "    console.log('segnalazioneId =', json.segnalazioneId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mentoreEmail\": \"{{mentoreEmail}}\",\n  \"teamNome\": \"{{teamNome}}\",\n  \"hackathonNome\": \"{{hackathonNome}}\",\n  \"descrizione\": \"Comportamento non conforme al regolamento\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mentoring/segnalazioni",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "mentoring", "segnalazioni"]
+            },
+            "description": "Il mentore segnala un team. 201 con segnalazioneId (salvato in {{segnalazioneId}}); 409 se non consentita."
+          }
+        },
+        {
+          "name": "Segnalazioni dell'organizzatore (UC18)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mentoring/segnalazioni/organizzatore/{{organizzatoreEmail}}",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "api",
+                "mentoring",
+                "segnalazioni",
+                "organizzatore",
+                "{{organizzatoreEmail}}"
+              ]
+            },
+            "description": "Elenca le segnalazioni destinate a un organizzatore (per email)."
+          }
+        },
+        {
+          "name": "Gestisci segnalazione (UC18)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decisione\": \"ACCOLTA\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/mentoring/segnalazioni/{{segnalazioneId}}/gestisci",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "api",
+                "mentoring",
+                "segnalazioni",
+                "{{segnalazioneId}}",
+                "gestisci"
+              ]
+            },
+            "description": "L'organizzatore gestisce una segnalazione (decisione). Usa {{segnalazioneId}}. 409 se non consentita."
+          }
+        },
+        {
+          "name": "Archivia segnalazione (UC18 3b)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/mentoring/segnalazioni/{{segnalazioneId}}/archivia",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "api",
+                "mentoring",
+                "segnalazioni",
+                "{{segnalazioneId}}",
+                "archivia"
+              ]
+            },
+            "description": "Archivia una segnalazione. Usa {{segnalazioneId}}. 409 se non consentita."
+          }
+        }
+      ]
+    }
+  ]
+}
