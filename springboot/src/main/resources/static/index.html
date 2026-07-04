@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HackHub - Client demo</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            margin: 0;
+            padding: 1.5rem;
+            background: #f4f5f7;
+            color: #1a1a1a;
+        }
+        h1 { margin-top: 0; }
+        p.sub { color: #555; margin-top: -0.5rem; }
+        .layout { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+        .panel {
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1rem;
+            flex: 1 1 340px;
+        }
+        h2 { font-size: 1rem; margin: 0 0 0.75rem; }
+        .step {
+            border-top: 1px solid #eee;
+            padding: 0.6rem 0;
+        }
+        .step:first-of-type { border-top: none; }
+        .step-title { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.35rem; }
+        button {
+            background: #2d6cdf;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 0.45rem 0.8rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+        button:hover { background: #1e56be; }
+        button.full { display: block; width: 100%; margin-bottom: 0.4rem; }
+        .paga { background: #1a8f57; }
+        .paga:hover { background: #147044; }
+        pre {
+            background: #0f1117;
+            color: #d7e0ff;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow: auto;
+            max-height: 70vh;
+            font-size: 0.8rem;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        code { background: #eef; padding: 0 0.25rem; border-radius: 3px; }
+        .hint { font-size: 0.75rem; color: #777; }
+    </style>
+</head>
+<body>
+    <h1>HackHub &mdash; Client demo</h1>
+    <p class="sub">Client web (HTML + vanilla JS) che chiama le REST API di HackHub sullo stesso host.</p>
+
+    <div class="layout">
+        <div class="panel">
+            <h2>Flusso end-to-end</h2>
+            <p class="hint">
+                Premi i bottoni in ordine (1 &rarr; 8). Ogni passo usa i dati creati dai passi
+                precedenti (email, nomi). Le risposte JSON appaiono a destra.
+            </p>
+
+            <div class="step">
+                <div class="step-title">1. Registra 2 utenti</div>
+                <button class="full" onclick="registraUtenti()">
+                    POST /api/account/registrati (organizzatore + membro)
+                </button>
+            </div>
+
+            <div class="step">
+                <div class="step-title">2. Crea un hackathon</div>
+                <button class="full" onclick="creaHackathon()">
+                    POST /api/hackathon
+                </button>
+            </div>
+
+            <div class="step">
+                <div class="step-title">3. Crea un team</div>
+                <button class="full" onclick="creaTeam()">
+                    POST /api/team
+                </button>
+            </div>
+
+            <div class="step">
+                <div class="step-title">4. Iscrivi il team all'hackathon</div>
+                <button class="full" onclick="iscriviTeam()">
+                    POST /api/team/{nome}/iscrivi
+                </button>
+            </div>
+
+            <div class="step">
+                <div class="step-title">5. Richiedi supporto (mentoring)</div>
+                <button class="full" onclick="richiediSupporto()">
+                    POST /api/mentoring/richieste
+                </button>
+            </div>
+
+            <div class="step">
+                <div class="step-title">6. Proponi una call</div>
+                <button class="full" onclick="proponiCall()">
+                    POST /api/mentoring/call
+                </button>
+            </div>
+
+            <div class="step">
+                <div class="step-title">7. Paga il montepremi</div>
+                <button class="full paga" onclick="pagaMontepremi()">
+                    POST /api/hackathon/{nome}/paga
+                </button>
+            </div>
+
+            <div class="step">
+                <div class="step-title">8. Extra</div>
+                <button onclick="hackathonPubblici()">GET /api/hackathon/pubblici</button>
+                <button onclick="eseguiTutto()">Esegui tutto (1&rarr;7)</button>
+                <button onclick="pulisci()">Pulisci output</button>
+            </div>
+
+            <p class="hint">
+                Stato demo (email/nomi generati): <code id="stato">nessun dato ancora</code>
+            </p>
+        </div>
+
+        <div class="panel">
+            <h2>Risposte (JSON)</h2>
+            <pre id="out">Le risposte delle API appariranno qui...</pre>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>
