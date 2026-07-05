@@ -126,7 +126,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nome\": \"{{hackathonNome}}\",\n  \"dataInizio\": \"2026-09-01\",\n  \"dataFine\": \"2026-09-03\",\n  \"luogo\": \"Camerino\",\n  \"regolamento\": \"Regolamento ufficiale della gara\",\n  \"scadenzaIscrizioni\": \"2026-08-25\",\n  \"dimensioneMaxTeam\": 5,\n  \"montepremi\": 10000,\n  \"organizzatoreEmail\": \"{{organizzatoreEmail}}\",\n  \"giudiceEmail\": \"{{giudiceEmail}}\",\n  \"mentoriEmails\": [\"{{mentoreEmail}}\"]\n}"
+              "raw": "{\n  \"nome\": \"{{hackathonNome}}\",\n  \"dataInizio\": \"2026-07-02\",\n  \"dataFine\": \"2026-07-04\",\n  \"luogo\": \"Camerino\",\n  \"regolamento\": \"Regolamento ufficiale della gara\",\n  \"scadenzaIscrizioni\": \"2026-07-01\",\n  \"dimensioneMaxTeam\": 5,\n  \"montepremi\": 10000,\n  \"organizzatoreEmail\": \"{{organizzatoreEmail}}\",\n  \"giudiceEmail\": \"{{giudiceEmail}}\",\n  \"mentoriEmails\": [\"{{mentoreEmail}}\"]\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/hackathon",
